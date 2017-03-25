@@ -40,7 +40,7 @@ namespace {
 
 int readTriMesh(string filename, FileMesh *mesh)
 {
-    int lastdot = filename.find_last_of('.');
+    size_t lastdot = filename.find_last_of('.');
     if(lastdot < 0) return 1;
     string suffix = filename.substr(lastdot, filename.length()-lastdot);
     if(suffix == ".ifs")
@@ -53,7 +53,7 @@ int readTriMesh(string filename, FileMesh *mesh)
 
 int writeTriMesh(string filename, FileMesh *mesh)
 {
-    int lastdot = filename.find_last_of('.');
+    size_t lastdot = filename.find_last_of('.');
     if(lastdot < 0) return 1;
     string suffix = filename.substr(lastdot, filename.length()-lastdot);
     if(suffix == ".ifs")

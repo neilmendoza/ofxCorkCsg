@@ -70,16 +70,17 @@ public:
         src.block_list = nullptr;
     }
     ~IterPool() {
-        // run through and destruct all remaining elements
-        for_each([](T* obj) {
+		for (T* obj = getFirst(); obj != NULL; obj = getNext(obj))
+		{
             obj->~T();
-        });
+		}
     }
-    
+
     void clear() {
-        for_each([](T* obj) {
+		for (T* obj = getFirst(); obj != NULL; obj = getNext(obj))
+		{
             obj->~T();
-        });
+		}
         numAlloced = 0;
         block_list = nullptr;
         pool.clear();
@@ -87,9 +88,10 @@ public:
     
     void operator=(IterPool &&src)
     {
-        for_each([](T* obj) {
+		for (T* obj = getFirst(); obj != NULL; obj = getNext(obj))
+		{
             obj->~T();
-        });
+		}
         block_list = src.block_list;
         src.block_list = nullptr;
         pool = std::move(src.pool);
@@ -133,7 +135,14 @@ public: // allocation/deallocation support
     }
     
 public:
-    inline void for_each(std::function<void(T*)> func) const {
+
+	inline T* getFirst() { return (T*)block_list; };
+	inline T* getNext(T* prev) { return (T*)(((Block*)prev)->next); };
+
+	inline void for_each(//std::function<void(T*)> func) const {
+							void (*func)(T*)
+						) const
+	{
         for(Block *block = block_list;
           block != NULL;
           block = block->next) {
@@ -194,6 +203,3 @@ public: // iteration support
 private:
     MemPool<Block> pool;
 };
-
-
-

@@ -33,20 +33,19 @@
 #include "quantization.h"
 
 #include <cfloat>
-
-namespace Empty3d {
+#include <assert.h>
 
 // externalized counters...
-int degeneracy_count = 0;
-int exact_count = 0;
-int callcount = 0;
+//int Empty3d::degeneracy_count = 0;
+//int Empty3d::exact_count = 0;
+//int Empty3d::callcount = 0;
 
 using namespace Ext4;
 using namespace AbsExt4;
 using namespace FixExt4;
 using namespace GMPExt4;
 
-void toExt(Ext4_1 &out, const Vec3d &in)
+inline void toExt(Ext4_1 &out, const Vec3d &in)
 {
     out.e0 = in.x;
     out.e1 = in.y;
@@ -54,7 +53,7 @@ void toExt(Ext4_1 &out, const Vec3d &in)
     out.e3 = 1.0f;
 }
 
-void toAbsExt(AbsExt4_1 &out, const Vec3d &in)
+inline void toAbsExt(AbsExt4_1 &out, const Vec3d &in)
 {
     Vec3d vec = abs(in);
     out.e0 = vec.x;
@@ -63,7 +62,7 @@ void toAbsExt(AbsExt4_1 &out, const Vec3d &in)
     out.e3 = 1.0f;
 }
 
-void toVec3d(Vec3d &out, const Ext4_1 &in)
+inline void toVec3d(Vec3d &out, const Ext4_1 &in)
 {
     // Warning: beware of division by zero!
     out.x = in.e0 / in.e3;
@@ -73,23 +72,23 @@ void toVec3d(Vec3d &out, const Ext4_1 &in)
 
 const static int IN_BITS = Quantization::BITS + 1; // +1 for sign bit
 
-void toFixExt(FixExt4_1<IN_BITS> &out, const Vec3d &in)
+inline void toFixExt(FixExt4_1<IN_BITS> &out, const Vec3d &in, const Quantization& quantizer)
 {
-    out.e0 = BitInt<IN_BITS>::Rep(Quantization::quantize2int(in[0]));
-    out.e1 = BitInt<IN_BITS>::Rep(Quantization::quantize2int(in[1]));
-    out.e2 = BitInt<IN_BITS>::Rep(Quantization::quantize2int(in[2]));
+    out.e0 = BitInt<IN_BITS>::Rep(quantizer.magnify(in[0]));
+    out.e1 = BitInt<IN_BITS>::Rep(quantizer.magnify(in[1]));
+    out.e2 = BitInt<IN_BITS>::Rep(quantizer.magnify(in[2]));
     out.e3 = BitInt<IN_BITS>::Rep(1);
 }
 
-void toGmpExt(GmpExt4_1 &out, const Vec3d &in)
+inline void toGmpExt(GmpExt4_1 &out, const Vec3d &in, const Quantization& quantizer)
 {
-    out.e0 = Quantization::quantize2int(in.x);
-    out.e1 = Quantization::quantize2int(in.y);
-    out.e2 = Quantization::quantize2int(in.z);
+    out.e0 = quantizer.magnify(in.x);
+    out.e1 = quantizer.magnify(in.y);
+    out.e2 = quantizer.magnify(in.z);
     out.e3 = 1;
 }
 
-void toVec3d(Vec3d &out, const GmpExt4_1 &in)
+inline void toVec3d(Vec3d &out, const GmpExt4_1 &in, const Quantization& quantizer)
 {
     Vec4d tmp;
     tmp.x = in.e0.get_d();
@@ -98,7 +97,7 @@ void toVec3d(Vec3d &out, const GmpExt4_1 &in)
     tmp.w = in.e3.get_d();
     tmp /= tmp.w;
     for(uint k=0; k<3; k++)
-        out.v[k] = Quantization::RESHRINK * tmp.v[k];
+        out.v[k] = quantizer.reshrink(tmp.v[k]);
 }
 
 //template<int BITS>
@@ -124,8 +123,7 @@ inline bool filterCheck(double val, double absval, double coeff) {
     return fabs(val) > absval*coeff;
 }
 
-
-bool isEmpty(const TriEdgeIn &input)
+bool Empty3d::isEmpty(const TriEdgeIn &input)
 {
     callcount++;
     
@@ -172,7 +170,7 @@ bool isEmpty(const TriEdgeIn &input)
            (inner(e_ext2, a_e1) < 0.0);
 }
 
-Vec3d coords(const TriEdgeIn &input)
+Vec3d Empty3d::coords(const TriEdgeIn &input) const
 {
     Ext4_2 temp_e2;
     
@@ -207,7 +205,7 @@ const static double COEFF_IT12_PISCT    = 10.0*EPS + 64.0*EPS2;
 const static double COEFF_IT12_S1       = 20.0*EPS + 256.0*EPS2;
 const static double COEFF_IT12_S2       = 24.0*EPS + 512.0*EPS2;
 
-int emptyFilter(const TriEdgeIn &input)
+int Empty3d::emptyFilter(const TriEdgeIn &input) const
 {
     Ext4_2 temp2;                           AbsExt4_2 ktemp2;
     Ext4_1 ep[2];                           AbsExt4_1 kep[2];
@@ -278,8 +276,9 @@ int emptyFilter(const TriEdgeIn &input)
         return -1; // i.e. false (the intersection is not empty)
 }
 
-bool exactFallback(const TriEdgeIn &input)
+bool Empty3d::exactFallback(const TriEdgeIn &input)
 {
+	assert(quantizer);
     // How many bits do we need for various intermediary values?
     // Here we label the amount with the relevant type (i.e. EXT2)
     // and the relevant role
@@ -295,9 +294,9 @@ bool exactFallback(const TriEdgeIn &input)
     FixExt4_1<IN_BITS>                  ep[2];
     FixExt4_1<IN_BITS>                  tp[3];
     for(uint i=0; i<2; i++)
-        toFixExt(ep[i], input.edge.p[i]);
+        toFixExt(ep[i], input.edge.p[i], *quantizer);
     for(uint i=0; i<3; i++)
-        toFixExt(tp[i], input.tri.p[i]);
+        toFixExt(tp[i], input.tri.p[i], *quantizer);
     
     // construct geometry
     FixExt4_2<LINE_BITS>                e;
@@ -358,9 +357,135 @@ bool exactFallback(const TriEdgeIn &input)
     return false;
 }
 
-bool emptyExact(const TriEdgeIn &input)
+/*************************/
+
+//DGM: we replace the very smart and tricky exterior algebra code (which fails sometimes :(
+//by a naive line/triangle intersection code). Hopefully, this part of Cork will be fixed one day!
+
+const double SMALL_NUM  = 1.0e-8; // to avoid division overflow
+
+/*bool intersect3D_EdgeEdge(		const Vec3d& A0,
+								const Vec3d& A1,
+								const Vec3d& B0,
+								const Vec3d& B1 )
+{
+	//Find lambda and mu such that:
+	//A = p0+lambda(p1-p0)
+	//B = p2+mu(p3-p2)
+	//(lambda, mu) = argmin(||A-B||²)
+	Vec3d p02 = A0-B0;
+	Vec3d p32 = B1-B0;
+	Vec3d p10 = A1-A0;
+	double denom = (dot(p10,p10) * dot(p32,p32)) - (dot(p32,p10) * dot(p32,p10));
+	if (fabs(denom) < SMALL_NUM)
+		return false;
+	double num = (dot(p02,p32) * dot(p32,p10)) - (dot(p02,p10) * dot(p32,p32));
+	double lambda = num / denom;
+	
+	num = dot(p02,p32) + (lambda*dot(p32,p10));
+	denom = dot(p32,p32);
+	if (fabs(denom) < SMALL_NUM)
+		return false;
+	double mu = num / denom;
+
+	return (lambda > 0.0 && lambda < 1.0) && (mu > 0.0 && mu < 1.0);
+}
+//*/
+
+//Source: http://geomalgorithms.com/a06-_intersect-2.html
+
+bool Empty3d::emptyApprox( const TriEdgeIn &input )
+{
+	callcount++;
+
+	// get triangle edge vectors and plane normal
+	Vec3d u = input.tri.p[1] - input.tri.p[0];
+	Vec3d v = input.tri.p[2] - input.tri.p[0];
+	Vec3d n = cross(u,v);			// cross product
+	if (max(abs(n)) == 0)			// triangle is degenerate
+	{
+		degeneracy_count++;
+		return true;					// do not deal with this case
+	}
+
+	Vec3d dir = input.edge.p[1] - input.edge.p[0];			// edge 'direction' vector
+	Vec3d w0 = input.edge.p[0] - input.tri.p[0];
+	double a = -dot(n,w0);
+	double b =  dot(n,dir);
+
+	if (fabs(b) < SMALL_NUM)		// edge is parallel to triangle plane
+	{
+		/*if (a == 0)					// edge lies in triangle plane
+		{
+			//TODO: we still want to test the intersection?!
+			if (intersect3D_EdgeEdge(input.edge.p[0],input.edge.p[1],input.tri.p[0],input.tri.p[1]))
+				return false;
+			if (intersect3D_EdgeEdge(input.edge.p[0],input.edge.p[1],input.tri.p[1],input.tri.p[2]))
+				return false;
+			if (intersect3D_EdgeEdge(v,input.edge.p[1],input.tri.p[2],input.tri.p[0]))
+				return false;
+		}
+		//*/
+		return true;				// edge disjoint from plane
+	}
+
+	// get intersect point of edge with triangle plane
+	double r = a / b;
+	if (r < SMALL_NUM || r > 1.0 - SMALL_NUM)			// edge doesn't realy intersect the triangle plane
+		return true;					// => no intersect
+
+	Vec3d I = input.edge.p[0] + r * dir;			// intersect point of ray and plane
+
+	// is I inside T?
+	double uu, uv, vv, wu, wv, D;
+	uu = dot(u,u);
+	uv = dot(u,v);
+	vv = dot(v,v);
+	Vec3d w = I - input.tri.p[0];
+	wu = dot(w,u);
+	wv = dot(w,v);
+	D = uv * uv - uu * vv;
+
+	// get and test parametric coords
+	double s, t;
+	s = (uv * wv - vv * wu) / D;
+	if (s < 0.0 || s > 1.0)			// I is outside T
+		return true;
+	t = (uv * wu - uu * wv) / D;
+	if (t < 0.0 || (s + t) > 1.0)	// I is outside T
+		return true;
+
+	return false;					// I is in T
+}
+
+Vec3d Empty3d::coordsApprox(const TriEdgeIn &input) const
+{
+	// get triangle edge vectors and plane normal
+	Vec3d u = input.tri.p[1] - input.tri.p[0];
+	Vec3d v = input.tri.p[2] - input.tri.p[0];
+	Vec3d n = cross(u,v);			// cross product
+	assert(max(abs(n)) != 0);
+
+	Vec3d dir = input.edge.p[1] - input.edge.p[0];			// edge 'direction' vector
+	Vec3d w0 = input.edge.p[0] - input.tri.p[0];
+	double a = -dot(n,w0);
+	double b =  dot(n,dir);
+	assert(fabs(b) >= SMALL_NUM);
+
+	// get intersect point of edge with triangle plane
+	double r = a / b;
+	assert(r >= SMALL_NUM && r <= 1.0 - SMALL_NUM);
+
+	Vec3d I = input.edge.p[0] + r * dir;			// intersect point of ray and plane
+	return I;
+}
+
+/************************/
+
+bool Empty3d::emptyExact(const TriEdgeIn &input)
 {
     callcount++;
+
     int filter = emptyFilter(input);
     if(filter == 0) {
         exact_count++;
@@ -370,7 +495,7 @@ bool emptyExact(const TriEdgeIn &input)
         return filter > 0;
 }
 
-Vec3d coordsExact(const TriEdgeIn &input)
+Vec3d Empty3d::coordsExact(const TriEdgeIn &input) const
 {
     // How many bits do we need for various intermediary values?
     // Here we label the amount with the relevant type (i.e. EXT2)
@@ -387,9 +512,9 @@ Vec3d coordsExact(const TriEdgeIn &input)
     GmpExt4_1                           ep[2];
     GmpExt4_1                           tp[3];
     for(uint i=0; i<2; i++)
-        toGmpExt(ep[i], input.edge.p[i]);
+        toGmpExt(ep[i], input.edge.p[i], *quantizer);
     for(uint i=0; i<3; i++)
-        toGmpExt(tp[i], input.tri.p[i]);
+        toGmpExt(tp[i], input.tri.p[i], *quantizer);
     
     // construct geometry
     GmpExt4_2                           e;
@@ -405,19 +530,12 @@ Vec3d coordsExact(const TriEdgeIn &input)
     
     // convert to double
     Vec3d result;
-    toVec3d(result, pisct);
+    toVec3d(result, pisct, *quantizer);
     //std::cout << result << std::endl;
     return result;
 }
 
-
-
-
-
-
-
-
-bool isEmpty(const TriTriTriIn &input)
+bool Empty3d::isEmpty(const TriTriTriIn &input)
 {
     callcount++;
     
@@ -464,7 +582,7 @@ bool isEmpty(const TriTriTriIn &input)
     return false;
 }
 
-Vec3d coords(const TriTriTriIn &input)
+Vec3d Empty3d::coords(const TriTriTriIn &input) const
 {
     Ext4_2 temp_e2;
     
@@ -495,7 +613,7 @@ Vec3d coords(const TriTriTriIn &input)
 const static double COEFF_IT222_PISCT   = 20.0*EPS + 256.0*EPS2;
 const static double COEFF_IT222_S2      = 34.0*EPS + 1024.0*EPS2;
 
-int emptyFilter(const TriTriTriIn &input)
+int Empty3d::emptyFilter(const TriTriTriIn &input) const
 {
     Ext4_2 temp2;                           AbsExt4_2 ktemp2;
     Ext4_1 p[3][3];                         AbsExt4_1 kp[3][3];
@@ -549,7 +667,7 @@ int emptyFilter(const TriTriTriIn &input)
         return -1; // i.e. false (the intersection is not empty)
 }
 
-bool exactFallback(const TriTriTriIn &input)
+bool Empty3d::exactFallback(const TriTriTriIn &input)
 {
     // How many bits do we need for various intermediary values?
     // Here we label the amount with the relevant type (i.e. EXT2)
@@ -566,7 +684,7 @@ bool exactFallback(const TriTriTriIn &input)
     FixExt4_3<EXT3_UP_BITS>             t[3];
     for(uint i=0; i<3; i++) {
         for(uint j=0; j<3; j++) {
-            toFixExt(p[i][j], input.tri[i].p[j]);
+            toFixExt(p[i][j], input.tri[i].p[j], *quantizer);
         }
         FixExt4_2<EXT2_UP_BITS>         temp;
         join(temp, p[i][0], p[i][1]);
@@ -615,7 +733,7 @@ bool exactFallback(const TriTriTriIn &input)
     return false;
 }
 
-bool emptyExact(const TriTriTriIn &input)
+bool Empty3d::emptyExact(const TriTriTriIn &input)
 {
     callcount++;
     int filter = emptyFilter(input);
@@ -627,7 +745,7 @@ bool emptyExact(const TriTriTriIn &input)
         return filter > 0;
 }
 
-Vec3d coordsExact(const TriTriTriIn &input)
+Vec3d Empty3d::coordsExact(const TriTriTriIn &input) const
 {
     // How many bits do we need for various intermediary values?
     // Here we label the amount with the relevant type (i.e. EXT2)
@@ -644,7 +762,7 @@ Vec3d coordsExact(const TriTriTriIn &input)
     GmpExt4_3                           t[3];
     for(uint i=0; i<3; i++) {
         for(uint j=0; j<3; j++) {
-            toGmpExt(p[i][j], input.tri[i].p[j]);
+            toGmpExt(p[i][j], input.tri[i].p[j], *quantizer);
         }
         GmpExt4_2                       temp;
         join(temp, p[i][0], p[i][1]);
@@ -661,13 +779,6 @@ Vec3d coordsExact(const TriTriTriIn &input)
     
     // convert to double
     Vec3d result;
-    toVec3d(result, pisct);
+    toVec3d(result, pisct, *quantizer);
     return result;
 }
-
-
-
-} // end namespace Empty3d
-
-
-

@@ -25,18 +25,17 @@
 // +-------------------------------------------------------------------------
 #pragma once
 
-#include "rawMesh.h"
+#include "../rawmesh/rawMesh.h"
 
-#include "prelude.h"
+#include "../util/prelude.h"
 #include <vector>
 #include <set>
 
-#include "vec.h"
-#include "ray.h"
-#include "shortVec.h"
+#include "../math/vec.h"
+#include "../math/ray.h"
+#include "../util/shortVec.h"
 
-#include "iterPool.h"
-
+#include "../util/iterPool.h"
 
 struct BoolVertexData {
 };
@@ -158,10 +157,32 @@ public:
     bool valid() const;
     
     RawMesh<VertData,TriData> raw() const;
-    
+
     inline int numVerts() const { return verts.size(); }
     inline int numTris() const { return tris.size(); }
-    
+
+
+	struct Tri
+	{
+		TriData data;
+		union
+		{
+			struct
+			{
+				uint a, b, c; // vertex ids
+			};
+			uint v[3];
+		};
+
+		inline Tri() {}
+	};
+
+	std::vector<Tri>& triangles() { return tris; }
+	const std::vector<Tri>& triangles() const { return tris; }
+
+	std::vector<VertData>&   vertices() { return verts; }
+	const std::vector<VertData>&   vertices() const { return verts; }
+
     inline void for_verts(std::function<void(VertData &)> func);
     inline void for_tris(std::function<void(TriData &,
                           VertData &, VertData &, VertData &)> func);
@@ -213,24 +234,19 @@ public: // BOOLean operation module
     void boolIsct(Mesh &rhs);
     void boolXor(Mesh &rhs);
     
-private:    // Internal Formats
-    struct Tri {
-        TriData data;
-        union {
-            struct {
-                uint a, b, c; // vertex ids
-            };
-            uint v[3];
-        };
-        
-        inline Tri() {}
-    };
-    
-    inline void merge_tris(uint tid_result, uint tid0, uint tid1);
+private:    // Internal stuff
+
+	inline void merge_tris(uint tid_result, uint tid0, uint tid1);
     inline void split_tris(uint t0ref, uint t1ref, uint t_orig_ref);
     inline void move_tri(Tri &t_new, Tri &t_old);
     inline void subdivide_tri(uint t_piece_ref, uint t_parent_ref);
     
+public:
+	inline std::vector<Tri>&            getTris() { return tris; }
+	inline const std::vector<Tri>&      getTris() const { return tris; }
+	inline std::vector<VertData>&       getVerts() { return verts; }
+	inline const std::vector<VertData>& getVerts() const { return verts; }
+
 private:    // DATA
     std::vector<Tri>        tris;
     std::vector<VertData>   verts;
@@ -283,12 +299,15 @@ private:    // caches
         inline void for_each(std::function<void(
                 uint i, uint j, EGraphEntry<Edata> &entry
             )> action
-        ) {
-            for(uint i=0; i<skeleton.size(); i++) {
-                for(auto &entry : skeleton[i]) {
-                    action(i, entry.vid, entry);
-                }
-            }
+        )
+		{
+			for(uint i=0; i<skeleton.size(); i++)
+			{
+				for(uint ind=0; ind != skeleton[i].size(); ++ind)
+				{
+					action(i, skeleton[i][ind].vid, skeleton[i][ind]);
+				}
+			}
         }
     };
     template<class Edata>
@@ -350,7 +369,9 @@ template<class VertData, class TriData>
 inline void Mesh<VertData,TriData>::for_tris(
     std::function<void(TriData &, VertData &, VertData &, VertData &)> func
 ) {
-    for(auto &tri : tris) {
+	for(size_t ind=0; ind!=tris.size(); ++ind)
+	{
+		Tri& tri = tris[ind];
         auto &a = verts[tri.a];
         auto &b = verts[tri.b];
         auto &c = verts[tri.c];
@@ -388,6 +409,3 @@ inline void Mesh<VertData,TriData>::accessIsct(
     auto &c = verts[tri.c];
     func(tri.data, a, b, c);
 }
-
-
-

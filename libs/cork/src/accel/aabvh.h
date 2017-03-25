@@ -25,7 +25,7 @@
 // +-------------------------------------------------------------------------
 #pragma once
 
-#include "bbox.h"
+#include "../math/bbox.h"
 
 #include <stack>
 
@@ -62,7 +62,7 @@ public:
         for(uint k=0; k<tmpids.size(); k++)
             tmpids[k] = k;
         
-        root = constructTree(0, tmpids.size(), 2);
+        root = constructTree(0, static_cast<uint>(tmpids.size()), 2);
     }
     ~AABVH() {}
     
@@ -84,8 +84,11 @@ public:
             if(!hasIsct(node->bbox, bbox))  continue;
             
             // otherwise...
-            if(node->isLeaf()) {
-                for(uint bid : node->blobids) {
+			if(node->isLeaf())
+			{
+				for(uint ind=0; ind != node->blobids.size(); ++ind)
+				{
+					uint bid = node->blobids[ind];
                     if(hasIsct(bbox, blobs[bid].bbox))
                         action(blobs[bid].id);
                 }
@@ -171,26 +174,3 @@ private:
     std::vector< GeomBlob<GeomIdx> >    blobs;
     std::vector<uint>                   tmpids; // used during construction
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

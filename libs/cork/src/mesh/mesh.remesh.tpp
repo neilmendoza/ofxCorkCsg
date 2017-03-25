@@ -28,7 +28,7 @@
 #include <map>
 #include <set>
 
-#include "memPool.h"
+#include "../util/memPool.h"
 
 //#include "files.h"
 
@@ -1206,4 +1206,3 @@ void Mesh<VertData,TriData>::edgeSplit(
                             scoreAndEnqueue(scratchpad.queue, e);
     }
 }
-

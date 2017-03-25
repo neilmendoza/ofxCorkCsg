@@ -25,89 +25,18 @@
 // +-------------------------------------------------------------------------
 #include "cork.h"
 
-#include "mesh.h"
-
+#include "mesh/mesh.h"
+#include "mesh/corkMesh.h"
 
 void freeCorkTriMesh(CorkTriMesh *mesh)
 {
-    delete[] mesh->triangles;
-    delete[] mesh->vertices;
+	if (mesh->triangles)
+		delete[] mesh->triangles;
+	if (mesh->vertices)
+		delete[] mesh->vertices;
     mesh->n_triangles = 0;
     mesh->n_vertices = 0;
 }
-
-
-struct CorkTriangle;
-
-struct CorkVertex :
-    public MinimalVertexData,
-    public RemeshVertexData,
-    public IsctVertexData,
-    public BoolVertexData
-{
-    void merge(const CorkVertex &v0, const CorkVertex &v1) {
-        double                              a0 = 0.5;
-        if(v0.manifold && !v1.manifold)     a0 = 0.0;
-        if(!v0.manifold && v1.manifold)     a0 = 1.0;
-        double a1 = 1.0 - a0;
-        
-        pos         = a0 * v0.pos       + a1 * v1.pos;
-    }
-    void interpolate(const CorkVertex &v0, const CorkVertex &v1) {
-        double a0 = 0.5;
-        double a1 = 0.5;
-        pos         = a0 * v0.pos       + a1 * v1.pos;
-    }
-    
-    
-    void isct(IsctVertEdgeTriInput<CorkVertex,CorkTriangle> input)
-    {
-        Vec2d       a_e     = Vec2d(1,1)/2.0;
-        Vec3d       a_t     = Vec3d(1,1,1)/3.0;
-        a_e /= 2.0;
-        a_t /= 2.0;
-    }
-    void isct(IsctVertTriTriTriInput<CorkVertex,CorkTriangle> input)
-    {
-        Vec3d       a[3];
-        for(uint k=0; k<3; k++) {
-            a[k]    = Vec3d(1,1,1)/3.0;
-            a[k] /= 3.0;
-        }
-        for(uint i=0; i<3; i++) {
-          for(uint j=0; j<3; j++) {
-        }}
-    }
-    void isctInterpolate(const CorkVertex &v0, const CorkVertex &v1) {
-        double a0 = len(v1.pos - pos);
-        double a1 = len(v0.pos - pos);
-        if(a0 + a1 == 0.0) a0 = a1 = 0.5; // safety
-        double sum = a0+a1;
-        a0 /= sum;
-        a1 /= sum;
-    }
-};
-
-struct CorkTriangle :
-    public MinimalTriangleData,
-    public RemeshTriangleData,
-    public IsctTriangleData,
-    public BoolTriangleData
-{
-    void merge(const CorkTriangle &, const CorkTriangle &) {}
-    static void split(CorkTriangle &, CorkTriangle &,
-                      const CorkTriangle &) {}
-    void move(const CorkTriangle &) {}
-    void subdivide(SubdivideTriInput<CorkVertex,CorkTriangle> input)
-    {
-        bool_alg_data = input.pt->bool_alg_data;
-    }
-};
-
-//using RawCorkMesh = RawMesh<CorkVertex, CorkTriangle>;
-//using CorkMesh = Mesh<CorkVertex, CorkTriangle>;
-typedef RawMesh<CorkVertex, CorkTriangle>   RawCorkMesh;
-typedef Mesh<CorkVertex, CorkTriangle>      CorkMesh;
 
 void corkTriMesh2CorkMesh(
     CorkTriMesh in,
@@ -157,8 +86,8 @@ void corkMesh2CorkTriMesh(
 ) {
     RawCorkMesh raw = mesh_in->raw();
     
-    out->n_triangles = raw.triangles.size();
-    out->n_vertices  = raw.vertices.size();
+    out->n_triangles = static_cast<uint>(raw.triangles.size());
+    out->n_vertices  = static_cast<uint>(raw.vertices.size());
     
     out->triangles = new uint[(out->n_triangles) * 3];
     out->vertices  = new float[(out->n_vertices) * 3];
@@ -169,11 +98,12 @@ void corkMesh2CorkTriMesh(
         (out->triangles)[3*i+2] = raw.triangles[i].c;
     }
     
-    for(uint i=0; i<out->n_vertices; i++) {
-        (out->vertices)[3*i+0] = raw.vertices[i].pos.x;
-        (out->vertices)[3*i+1] = raw.vertices[i].pos.y;
-        (out->vertices)[3*i+2] = raw.vertices[i].pos.z;
-    }
+	for(uint i=0; i<out->n_vertices; i++)
+	{
+		(out->vertices)[3*i+0] = static_cast<float>(raw.vertices[i].pos.x);
+		(out->vertices)[3*i+1] = static_cast<float>(raw.vertices[i].pos.y);
+		(out->vertices)[3*i+2] = static_cast<float>(raw.vertices[i].pos.z);
+	}
 }
 
 
@@ -257,4 +187,3 @@ void resolveIntersections(
     
     corkMesh2CorkTriMesh(&cmIn0, out);
 }
-

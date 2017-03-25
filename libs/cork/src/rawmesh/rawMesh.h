@@ -27,7 +27,7 @@
 
 #include <functional>
 
-#include "vec.h"
+#include "../math/vec.h"
 
 #include <vector>
 

@@ -25,58 +25,92 @@
 // +-------------------------------------------------------------------------
 #pragma once
 
-#include "vec.h"
+#include "../math/vec.h"
 
-namespace Empty3d {
+class Quantization;
 
-struct TriIn
-{
-    Vec3d p[3];
-};
+class Empty3d {
 
-struct EdgeIn
-{
-    Vec3d p[2];
-};
+public:
+
+	Empty3d(Quantization* _quantizer)
+		: degeneracy_count(0)
+		, exact_count(0)
+		, callcount(0)
+		, quantizer(_quantizer)
+	{
+	}
+
+	struct TriIn
+	{
+		Vec3d p[3];
+	};
+
+	struct EdgeIn
+	{
+		Vec3d p[2];
+	};
+
+	struct TriEdgeIn
+	{
+		TriIn   tri;
+		EdgeIn  edge;
+	};
+	bool isEmpty(const TriEdgeIn &input);
+	Vec3d coords(const TriEdgeIn &input) const;
+	bool emptyExact(const TriEdgeIn &input);
+	Vec3d coordsExact(const TriEdgeIn &input) const;
+
+	// Determines if an edge intersects a triangle
+	//    Input:  an edge and a triangle
+	//    Return: false if the edge intersects the triangle
+	bool emptyApprox( const TriEdgeIn &input );
+	Vec3d coordsApprox(const TriEdgeIn &input) const;
+
+	struct TriTriTriIn
+	{
+		TriIn tri[3];
+	};
+	bool isEmpty(const TriTriTriIn &input);
+	Vec3d coords(const TriTriTriIn &input) const;
+	bool emptyExact(const TriTriTriIn &input);
+	Vec3d coordsExact(const TriTriTriIn &input) const;
+
+	inline bool hasDegeneracies() const { return degeneracy_count > 0; }
+
+	void resetCounts()
+	{
+		degeneracy_count = 0;
+		exact_count = 0;
+		callcount = 0;
+	}
+
+	/*
+	// exact versions
 
 
+	bool emptyExact(const Cell3d0 &c0,
+	const Complex3d2 &complex,
+	const Metric3d2 &metric);
 
-struct TriEdgeIn
-{
-    TriIn   tri;
-    EdgeIn  edge;
-};
-bool isEmpty(const TriEdgeIn &input);
-Vec3d coords(const TriEdgeIn &input);
-bool emptyExact(const TriEdgeIn &input);
-Vec3d coordsExact(const TriEdgeIn &input);
+	void cell3d0toPointExact(SmVector3 &point,
+	const Cell3d0 &c0,
+	const Complex3d2 &complex,
+	const Metric3d2 &metric);
+	*/
 
-struct TriTriTriIn
-{
-    TriIn tri[3];
-};
-bool isEmpty(const TriTriTriIn &input);
-Vec3d coords(const TriTriTriIn &input);
-bool emptyExact(const TriTriTriIn &input);
-Vec3d coordsExact(const TriTriTriIn &input);
+protected:
 
-extern int degeneracy_count; // count degeneracies encountered
-extern int exact_count; // count of filter calls failed
-extern int callcount; // total call count
+	int emptyFilter(const TriEdgeIn &input) const;
+	bool exactFallback(const TriEdgeIn &input);
 
-/*
-// exact versions
+	int emptyFilter(const TriTriTriIn &input) const;
+	bool exactFallback(const TriTriTriIn &input);
 
+	int degeneracy_count; // count degeneracies encountered
+	int exact_count; // count of filter calls failed
+	int callcount; // total call count
 
-bool emptyExact(const Cell3d0 &c0,
-                const Complex3d2 &complex,
-                const Metric3d2 &metric);
+	Quantization* quantizer;
 
-void cell3d0toPointExact(SmVector3 &point,
-                         const Cell3d0 &c0,
-                         const Complex3d2 &complex,
-                         const Metric3d2 &metric);
-*/
-} // end namespace Empty3d
-
-
+}; // end class Empty3d

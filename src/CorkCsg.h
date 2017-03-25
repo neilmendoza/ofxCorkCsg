@@ -32,12 +32,25 @@
 #pragma once
 
 #include "ofMain.h"
+#include "CorkMeshWrapper.h"
 
 namespace nm
 {
-    class CorkCsg
+    namespace CorkCsg
     {
-    public:
-    private:
-    };
+        // Boolean operations follow
+        // result = A U B
+        ofMesh computeUnion(const ofMesh& in0, const ofMesh& in1);
+        bool isSolid(const ofMesh& mesh);
+        
+        // only works if there's no floating point errors in the vertices
+        ofMesh fastUnifyVertices(const ofMesh& mesh);
+        ofMesh unifyVertices(const ofMesh& mesh, float epsilonSq = 1e-8);
+        
+        unsigned getIndex(const ofMesh& mesh, const unsigned idx);
+        unsigned getNumVertices(const ofMesh& mesh);
+        
+        CorkMeshWrapper toCork(const ofMesh& mesh);
+        
+    }
 }

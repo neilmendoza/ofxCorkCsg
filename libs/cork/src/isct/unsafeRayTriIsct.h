@@ -25,8 +25,8 @@
 // +-------------------------------------------------------------------------
 #pragma once
 
-#include "ray.h"
-#include "vec.h"
+#include "../math/ray.h"
+#include "../math/vec.h"
 
 struct isct_ray_triangle_result
 {
@@ -78,6 +78,3 @@ bool isct_ray_triangle(
     *bary = Vec3d(volBC/edgeSum, volCA/edgeSum, volAB/edgeSum);
                                 return true;
 }
-
-
-

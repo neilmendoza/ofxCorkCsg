@@ -25,6 +25,12 @@
 // +-------------------------------------------------------------------------
 #pragma once
 
+//for M_PI
+#ifndef _USE_MATH_DEFINES
+#define _USE_MATH_DEFINES
+#endif
+#include <math.h>
+
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
@@ -54,7 +60,7 @@ std::ostream &err();
         err()     << "ENSURE FAILED at " \
                   << __FILE__ << ", line #" << __LINE__ << ":\n" \
                   << "    " << #STATEMENT << std::endl; \
-        exit(1); \
+		throw std::runtime_error("ENSURE FAILED"); \
     } \
 }
 #endif // ENSURE
@@ -159,6 +165,3 @@ inline double drand(double min, double max) {
 inline uint randMod(uint range) {
     return std::rand()%range;
 }
-
-
-

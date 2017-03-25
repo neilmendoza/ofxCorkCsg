@@ -25,10 +25,11 @@
 // +-------------------------------------------------------------------------
 #include "quantization.h"
 
-namespace Quantization {
+//double Quantization::MAGNIFY = 1.0;
+//double Quantization::RESHRINK = 1.0;
 
-double MAGNIFY = 1.0;
-double RESHRINK = 1.0;
-
-} // end namespace Quantization
-
+Quantization::Quantization()
+	: MAGNIFY(1.0)
+	, RESHRINK(1.0)
+{
+}

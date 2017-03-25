@@ -25,7 +25,7 @@
 // +-------------------------------------------------------------------------
 #pragma once
 
-#include "iterPool.h"
+#include "../util/iterPool.h"
 
 /*
  *  Allows for topological algorithms to manipulate
@@ -98,7 +98,7 @@ struct Mesh<VertData, TriData>::TopoCache {
     
     // helper to flip triangle orientation
     inline void flipTri(Tptr);
-    
+
 private:
     void init();
 };
@@ -107,10 +107,10 @@ private:
 template<class VertData, class TriData> inline
 Vptr Mesh<VertData, TriData>::TopoCache::newVert()
 {
-    uint        ref         = mesh->verts.size();
+    size_t      ref         = mesh->verts.size();
                 mesh->verts.push_back(VertData());
     Vptr        v           = verts.alloc(); // cache.verts
-                v->ref      = ref;
+                v->ref      = static_cast<uint>(ref);
                 return v;
 }
 template<class VertData, class TriData> inline
@@ -122,10 +122,10 @@ Eptr Mesh<VertData, TriData>::TopoCache::newEdge()
 template<class VertData, class TriData> inline
 Tptr Mesh<VertData, TriData>::TopoCache::newTri()
 {
-    uint        ref         = mesh->tris.size();
+    size_t      ref         = mesh->tris.size();
                 mesh->tris.push_back(Tri());
     Tptr        t           = tris.alloc(); // cache.tris
-                t->ref      = ref;
+                t->ref      = static_cast<uint>(ref);
                 return t;
 }
 
@@ -268,56 +268,63 @@ void Mesh<VertData, TriData>::TopoCache::init()
     //  * Generate TopoEdges
     //  * Hook up Triangles and Edges
     //  * Hook up Vertices and Edges
-    for(uint vid0=0; vid0 < edgeacc.size(); vid0++) {
-      for(TopoEdgePrototype &proto : edgeacc[vid0]) {
-        uint vid1 = proto.vid;
-        Vptr v0 = temp_verts[vid0];
-        Vptr v1 = temp_verts[vid1];
-        
-        Eptr edge = edges.alloc(); // cache.edges.alloc()
-        // edges <--> verts
-        edge->verts[0] = v0;
-        v0->edges.push_back(edge);
-        edge->verts[1] = v1;
-        v1->edges.push_back(edge);
-        // edges <--> tris
-        for(Tptr tri : proto.tris) {
-            edge->tris.push_back(tri);
-            for(uint k=0; k<3; k++) {
-                if(v0 != tri->verts[k] && v1 != tri->verts[k]) {
-                    tri->edges[k] = edge;
-                    break;
-                }
-            }
-        }
-    }}
-    
-    //ENSURE(isValid());
-    //print();
+	for(uint vid0=0; vid0 < edgeacc.size(); vid0++)
+	{
+		for(uint ind=0; ind!= edgeacc[vid0].size(); ++ind)
+		{
+			TopoEdgePrototype &proto = edgeacc[vid0][ind];
+			uint vid1 = proto.vid;
+			Vptr v0 = temp_verts[vid0];
+			Vptr v1 = temp_verts[vid1];
+
+			Eptr edge = edges.alloc(); // cache.edges.alloc()
+			// edges <--> verts
+			edge->verts[0] = v0;
+			v0->edges.push_back(edge);
+			edge->verts[1] = v1;
+			v1->edges.push_back(edge);
+			// edges <--> tris
+			for(uint ind2=0; ind2!= proto.tris.size(); ++ind2)
+			{
+				Tptr tri = proto.tris[ind2];
+				edge->tris.push_back(tri);
+				for(uint k=0; k<3; k++)
+				{
+					if(v0 != tri->verts[k] && v1 != tri->verts[k])
+					{
+						tri->edges[k] = edge;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	//ENSURE(isValid());
+	//print();
 }
-
-
-
 
 template<class VertData, class TriData>
 void Mesh<VertData, TriData>::TopoCache::commit()
 {
     //ENSURE(isValid());
-    
+
     // record which vertices are live
     std::vector<bool> live_verts(mesh->verts.size(), false);
-    verts.for_each([&](Vptr vert) { // cache.verts
-        live_verts[vert->ref] = true;
-    });
-    
+	for (Vptr vert = verts.getFirst(); vert != NULL; vert = verts.getNext(vert))
+	{ // cache.verts
+		live_verts[vert->ref] = true;
+	}
+
     // record which triangles are live, and record connectivity
     std::vector<bool> live_tris(mesh->tris.size(), false);
-    tris.for_each([&](Tptr tri) { // cache.tris
+	for (Tptr tri = tris.getFirst(); tri != NULL; tri = tris.getNext(tri))
+	{// cache.tris
         live_tris[tri->ref] = true;
         for(uint k=0; k<3; k++)
             mesh->tris[tri->ref].v[k] = tri->verts[k]->ref;
-    });
-    
+	}
+
     // compact the vertices and build a remapping function
     std::vector<uint> vmap(mesh->verts.size());
     uint write = 0;
@@ -333,10 +340,11 @@ void Mesh<VertData, TriData>::TopoCache::commit()
     mesh->verts.resize(write);
     
     // rewrite the vertex reference ids
-    verts.for_each([&](Vptr vert) { // cache.verts
+	for (Vptr vert = verts.getFirst(); vert != NULL; vert = verts.getNext(vert))
+	{ // cache.verts
         vert->ref = vmap[vert->ref];
-    });
-    
+    }
+
     std::vector<uint> tmap(mesh->tris.size());
     write = 0;
     for(uint read = 0; read < mesh->tris.size(); read++) {
@@ -353,12 +361,11 @@ void Mesh<VertData, TriData>::TopoCache::commit()
     mesh->tris.resize(write);
     
     // rewrite the triangle reference ids
-    tris.for_each([&](Tptr tri) { // cache.tris
+	for (Tptr tri = tris.getFirst(); tri != NULL; tri = tris.getNext(tri))
+	{ // cache.tris
         tri->ref = tmap[tri->ref];
-    });
+    }
 }
-
-
 
 // support functions for validity check
 template<class T, class Container> inline
@@ -446,21 +453,18 @@ bool Mesh<VertData, TriData>::TopoCache::isValid()
 }
 
 
-
-
-
-
+#ifdef SUPPORT_TOPO_STREAM_OPERATORS
 
 std::ostream& operator<<(std::ostream &out, const TopoVert& vert)
 {
     out << "ref(" << vert.ref << ") "
         << "e(" << vert.edges.size() << "):";
-    for(Eptr e : vert.edges)
-        out << e << ";";
+	for(size_t ind=0; ind != vert.edges.size(); ++ind)
+		out << vert.edges[ind] << ";";
     out << " "
         << "t(" << vert.tris.size() << "):";
-    for(Tptr t : vert.tris)
-        out << t << ";";
+	for(size_t ind=0; ind != vert.tris.size(); ++ind)
+		out << vert.tris[ind] << ";";
     return out;
 }
 
@@ -470,8 +474,8 @@ std::ostream& operator<<(std::ostream &out, const TopoEdge& edge)
                    << edge.verts[1] << "(" << edge.verts[1]->ref << ");";
     out << " "
         << "t(" << edge.tris.size() << "):";
-    for(Tptr t : edge.tris)
-        out << t << ";";
+	for(size_t ind=0; ind != edge.tris.size(); ++ind)
+		out << edge.tris[ind] << ";";
     return out;
 }
 
@@ -488,6 +492,7 @@ std::ostream& operator<<(std::ostream &out, const TopoTri& tri)
     return out;
 }
 
+#endif
 
 template<class VertData, class TriData>
 void Mesh<VertData, TriData>::TopoCache::print()
@@ -529,7 +534,3 @@ void Mesh<VertData, TriData>::TopoCache::print()
     });
     cout << "There were " << vert_count << " VERTS" << endl;
 }
-
-
-
-

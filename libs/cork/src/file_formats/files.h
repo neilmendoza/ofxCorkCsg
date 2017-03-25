@@ -29,7 +29,7 @@
 
 //#include "triMesh.h"
 
-#include "rawMesh.h"
+#include "../rawmesh/rawMesh.h"
 
 /*
  *  Files provides a wrapper for different file types and a common

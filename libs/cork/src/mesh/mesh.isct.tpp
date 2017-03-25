@@ -27,15 +27,17 @@
 
 #include "mesh.topoCache.tpp"
 
-#include "bbox.h"
-#include "quantization.h"
-#include "empty3d.h"
+#include "../math/bbox.h"
+#include "../isct/quantization.h"
+#include "../isct/empty3d.h"
 
-#include "aabvh.h"
+#include "../accel/aabvh.h"
+
+#include <assert.h>
 
 #define REAL double
 extern "C" {
-#include "triangle.h"
+#include "../isct/triangle.h"
 }
 
 struct GenericVertType;
@@ -133,7 +135,8 @@ struct GluePointMarker
 template<uint LEN> inline
 IEptr find_edge(ShortVec<IEptr,LEN> &vec, Tptr key)
 {
-    for(IEptr ie : vec) {
+    for(uint ind=0; ind!=vec.size(); ++ind) {
+		IEptr ie = vec[ind];
         if(ie->other_tri_key == key)
             return ie;
     }
@@ -178,8 +181,8 @@ inline void disconnectGE(GEptr ge)
 {
     ge->ends[0]->edges.erase(ge);
     ge->ends[1]->edges.erase(ge);
-    for(IVptr iv : ge->interior)
-        iv->edges.erase(ge);
+    for(uint ind = 0; ind != ge->interior.size(); ++ind)
+        ge->interior[ind]->edges.erase(ge);
 }
 
 // should deal with via pointers
@@ -238,8 +241,8 @@ public:
         IVptr       iv              = iprob->newIsctVert(edge, the_tri, glue);
                     iv->boundary    = false;
                     iverts.push_back(iv);
-        for(Tptr tri_key : edge->tris) {
-                    addEdge(iprob, iv, tri_key);
+        for(uint ind=0; ind != edge->tris.size(); ++ind) {
+                    addEdge(iprob, iv, edge->tris[ind]);
         }
         return iv;
     }
@@ -279,7 +282,8 @@ public:
                     iv->boundary    = false;
                     iverts.push_back(iv);
         // find the 2 interior edges
-        for(IEptr ie : iedges) {
+        for(uint ind=0; ind != iedges.size(); ++ind) {
+			IEptr ie = iedges[ind];
             if(ie->other_tri_key == t0 ||
                ie->other_tri_key == t1) {
                     ie->interior.push_back(iv);
@@ -293,7 +297,8 @@ public:
         // identify all intersection edges missing endpoints
         // and check to see if we can assign an original vertex
         // as the appropriate endpoint.
-        for(IEptr ie : iedges) {
+        for(uint ind=0; ind!=iedges.size(); ++ind) {
+			IEptr ie = iedges[ind];
             if(ie->ends[1] == nullptr) {
                 // try to figure out which vertex must be the endpoint...
                 Vptr vert = commonVert(the_tri, ie->other_tri_key);
@@ -305,10 +310,12 @@ public:
                     std::cout << "   "
                               << iv->glue_marker->edge_tri_type
                               << std::endl;
+#ifdef SUPPORT_TOPO_STREAM_OPERATORS
                     std::cout << "the   tri is " << the_tri << ": "
                               << *the_tri << std::endl;
                     std::cout << "other tri is " << ie->other_tri_key << ": "
                               << *(ie->other_tri_key) << std::endl;
+#endif
                     std::cout << "coordinates for triangles" << std::endl;
                     std::cout << "the tri" << std::endl;
                     for(uint k=0; k<3; k++)
@@ -317,11 +324,12 @@ public:
                     for(uint k=0; k<3; k++)
                         std::cout << iprob->vPos(ie->other_tri_key->verts[k])
                                   << std::endl;
-                    std::cout << "degen count:"
-                              << Empty3d::degeneracy_count << std::endl;
-                    std::cout << "exact count: "
-                              << Empty3d::exact_count << std::endl;
+                    //std::cout << "degen count:"
+                    //    << empty3d.degeneracy_count << std::endl;
+                    //std::cout << "exact count: "
+                    //    << empty3d.exact_count << std::endl;
                 }
+                //assert(vert);
                 ENSURE(vert); // bad if we can't find a common vertex
                 // then, find the corresponding OVptr, and connect
                 for(uint k=0; k<3; k++) {
@@ -334,14 +342,11 @@ public:
             }
         }
         
+        //assert(isValid());
         ENSURE(isValid());
     }
     
-    bool isValid() const {
-        ENSURE(the_tri);
-        
-        return true;
-    }
+    bool isValid() const { return the_tri != 0; }
     
     void subdivide(IsctProblem *iprob) {
         // collect all the points, and create more points as necessary
@@ -350,7 +355,9 @@ public:
             points.push_back(overts[k]);
             //std::cout << k << ": id " << overts[k]->concrete->ref << std::endl;
         }
-        for(IVptr iv : iverts) {
+        for(uint ind=0; ind!=iverts.size(); ++ind)
+		{
+			IVptr iv = iverts[ind];
             //iprob->buildConcreteVert(iv);
             points.push_back(iv);
             /*std::cout << "  " << points.size() - 1
@@ -396,7 +403,8 @@ public:
         //          << "; " << the_tri->verts[1]->ref
         //          << "; " << the_tri->verts[2]->ref
         //          << std::endl;
-        for(IEptr &ie : iedges) {
+        for(uint ind=0; ind!=iedges.size(); ++ind) {
+			IEptr &ie = iedges[ind];
             //std::cout << "iedge:  "
             //          << ie->ends[0]->idx << "; "
             //          << ie->ends[1]->idx << std::endl;
@@ -568,12 +576,14 @@ private:
             
             // pack the interior vertices into a vector for sorting
             std::vector< std::pair<double,IVptr> > verts;
-            for(IVptr iv : ge->interior) {
-                        verts.push_back(std::make_pair(
-                            // if the sort is ascending, then we're good...
-                            sign * iv->coord.v[dim],
-                            iv
-                        ));
+            for(uint ind=0; ind!=ge->interior.size(); ++ind)
+			{
+				IVptr iv = ge->interior[ind];
+				verts.push_back(std::make_pair(
+					// if the sort is ascending, then we're good...
+					sign * iv->coord.v[dim],
+					iv
+					));
             }
             // ... and sort the vector
                         std::sort(verts.begin(), verts.end());
@@ -613,46 +623,67 @@ template<class VertData, class TriData>
 class Mesh<VertData,TriData>::IsctProblem : public TopoCache
 {
 public:
-    IsctProblem(Mesh *owner) : TopoCache(owner)
+
+    IsctProblem(Mesh *owner)
+        : TopoCache(owner)
+        , empty3d(&quantizer)
     {
         // initialize all the triangles to NOT have an associated tprob
-        TopoCache::tris.for_each([](Tptr t) {
+        for (Tptr t = TopoCache::tris.getFirst(); t != NULL; t = TopoCache::tris.getNext(t))
+        {
             t->data = nullptr;
-        });
-        
-        // Callibrate the quantization unit...
-        double maxMag = 0.0;
-        for(VertData &v : TopoCache::mesh->verts) {
-            maxMag = std::max(maxMag, max(abs(v.pos)));
         }
-        Quantization::callibrate(maxMag);
+        
+        // Calibrate the quantization unit...
+        double maxMag = 0.0;
+        for(size_t ind=0; ind != TopoCache::mesh->verts.size(); ++ind) {
+            maxMag = std::max(maxMag, max(abs(TopoCache::mesh->verts[ind].pos)));
+        }
+        quantizer.callibrate(maxMag);
         
         // and use vertex auxiliary data to store quantized vertex coordinates
-        uint N = TopoCache::mesh->verts.size();
-        quantized_coords.resize(N);
-        uint write = 0;
-        TopoCache::verts.for_each([&](Vptr v) {
-#ifdef _WIN32
-            Vec3d raw = mesh->verts[v->ref].pos;
-#else
-            Vec3d raw = TopoCache::mesh->verts[v->ref].pos;
-#endif
-            quantized_coords[write].x = Quantization::quantize(raw.x);
-            quantized_coords[write].y = Quantization::quantize(raw.y);
-            quantized_coords[write].z = Quantization::quantize(raw.z);
-            v->data = &(quantized_coords[write]);
-            write++;
-        });
+        quantizeVerts(quantizer);
     }
     
     virtual ~IsctProblem() {}
-    
+
+	// DGM: to replace lambda in IsctProblem constructor!
+	void quantizeVerts(const Quantization& quantizer)
+	{
+		if (!mesh)
+			return;
+
+		size_t N = mesh->verts.size();
+		quantized_coords.resize(N);
+
+		uint write = 0;
+		for (Vptr v = verts.getFirst(); v != NULL; v = verts.getNext(v))
+		{
+#ifdef _WIN32
+			Vec3d raw = mesh->verts[v->ref].pos;
+#else
+			Vec3d raw = TopoCache::mesh->verts[v->ref].pos;
+#endif
+			quantized_coords[write].x = quantizer.quantize(raw.x);
+			quantized_coords[write].y = quantizer.quantize(raw.y);
+			quantized_coords[write].z = quantizer.quantize(raw.z);
+			v->data = &(quantized_coords[write]);
+			write++;
+		}
+
+		ENSURE(write == N);
+	}
+
     // access auxiliary quantized coordinates
     inline Vec3d vPos(Vptr v) const {
         return *(reinterpret_cast<Vec3d*>(v->data));
     }
     
     Tprob getTprob(Tptr t) {
+		if (t->ref == 46445)
+		{
+			int stop = 1;
+		}
         Tprob prob = reinterpret_cast<Tprob>(t->data);
         if(!prob) {
             t->data = prob = tprobs.alloc();
@@ -832,7 +863,9 @@ protected: // DATA
     IterPool<SplitEdgeType>     sepool;
     IterPool<GenericTriType>    gtpool;
 private:
+    Empty3d                     empty3d;
     std::vector<Vec3d>          quantized_coords;
+    Quantization                quantizer;
 private:
     inline void for_edge_tri(std::function<bool(Eptr e, Tptr t)>);
     inline void bvh_edge_tri(std::function<bool(Eptr e, Tptr t)>);
@@ -850,8 +883,8 @@ private:
     inline void marshallArithmeticInput(
         Empty3d::TriTriTriIn &input, Tptr t0, Tptr t1, Tptr t2) const;
     
-    bool checkIsct(Eptr e, Tptr t) const;
-    bool checkIsct(Tptr t0, Tptr t1, Tptr t2) const;
+    bool checkIsct(Eptr e, Tptr t);
+    bool checkIsct(Tptr t0, Tptr t1, Tptr t2);
     
     Vec3d computeCoords(Eptr e, Tptr t) const;
     Vec3d computeCoords(Tptr t0, Tptr t1, Tptr t2) const;
@@ -866,15 +899,6 @@ private: // functions here to get around a GCC bug...
     void createRealTriangles(Tprob tprob, EdgeCache &ecache);
 };
 
-template<class T, uint LEN> inline
-void for_pairs(
-    ShortVec<T,LEN> &vec,
-    std::function<void(T&,T&)> func
-) {
-    for(uint i=0; i<vec.size(); i++)
-        for(uint j=i+1; j<vec.size(); j++)
-            func(vec[i], vec[j]);
-}
 
 struct TriTripleTemp
 {
@@ -915,14 +939,16 @@ void Mesh<VertData,TriData>::IsctProblem::bvh_edge_tri(
     std::function<bool(Eptr e, Tptr t)> func
 ) {
     std::vector< GeomBlob<Eptr> > edge_geoms;
-    TopoCache::edges.for_each([&](Eptr e) {
+	for (Eptr e = TopoCache::edges.getFirst(); e!= NULL; e = TopoCache::edges.getNext(e))
+	{
         edge_geoms.push_back(edge_blob(e));
-    });
+    }
     AABVH<Eptr> edgeBVH(edge_geoms);
     
     // use the acceleration structure
     bool aborted = false;
-    TopoCache::tris.for_each([&](Tptr t) {
+	for (Tptr t = TopoCache::tris.getFirst(); t != NULL; t = TopoCache::tris.getNext(t))
+	{
         // compute BBox
         BBox3d bbox = buildBox(t);
         if(!aborted) {
@@ -931,13 +957,13 @@ void Mesh<VertData,TriData>::IsctProblem::bvh_edge_tri(
                     aborted = true;
             });
         }
-    });
+    }
 }
 
 template<class VertData, class TriData>
 bool Mesh<VertData,TriData>::IsctProblem::tryToFindIntersections()
 {
-    Empty3d::degeneracy_count = 0;
+	empty3d.resetCounts();
     // Find all edge-triangle intersection points
     //for_edge_tri([&](Eptr eisct, Tptr tisct)->bool{
     bvh_edge_tri([&](Eptr eisct, Tptr tisct)->bool{
@@ -947,53 +973,70 @@ bool Mesh<VertData,TriData>::IsctProblem::tryToFindIntersections()
                     glue->e                 = eisct;
                     glue->t[0]              = tisct;
         // first add point and edges to the pierced triangle
+  //      if (tisct->ref == 46445 || tisct->ref == 46510 )
+		//{
+		//	int toto = 0;
+		//}
         IVptr iv = getTprob(tisct)->addInteriorEndpoint(this, eisct, glue);
-        for(Tptr tri : eisct->tris) {
-            getTprob(tri)->addBoundaryEndpoint(this, tisct, eisct, iv);
+        for(uint ind=0; ind!=eisct->tris.size(); ++ind) {
+            getTprob(eisct->tris[ind])->addBoundaryEndpoint(this, tisct, eisct, iv);
         }
       }
-      if(Empty3d::degeneracy_count > 0)
+      if(empty3d.hasDegeneracies())
         return false; // break
       else
         return true; // continue
     });
-    if(Empty3d::degeneracy_count > 0) {
+    if(empty3d.hasDegeneracies()) {
         return false;   // restart / abort
     }
     
     // we're going to peek into the triangle problems in order to
     // identify potential candidates for Tri-Tri-Tri intersections
     std::vector<TriTripleTemp> triples;
-    tprobs.for_each([&](Tprob tprob) {
-        Tptr t0 = tprob->the_tri;
-        // Scan pairs of existing edges to create candidate triples
-        for_pairs<IEptr,2>(tprob->iedges, [&](IEptr &ie1, IEptr &ie2){
-            Tptr t1 = ie1->other_tri_key;
-            Tptr t2 = ie2->other_tri_key;
-            // This triple might be considered three times,
-            // one for each triangle it contains.
-            // To prevent duplication, only proceed if this is
-            // the least triangle according to an arbitrary ordering
-            if(t0 < t1 && t0 < t2) {
-                // now look for the third edge.  We're not
-                // sure if it exists...
-                Tprob prob1 = reinterpret_cast<Tprob>(t1->data);
-                for(IEptr ie : prob1->iedges) {
-                    if(ie->other_tri_key == t2) {
-                        // ADD THE TRIPLE
-                        triples.push_back(TriTripleTemp(t0, t1, t2));
-                    }
-                }
-            }
-        });
-    });
+	for (Tprob tprob = tprobs.getFirst(); tprob != NULL; tprob = tprobs.getNext(tprob))
+	{
+		Tptr t0 = tprob->the_tri;
+		// Scan pairs of existing edges to create candidate triples
+		for(uint i=0; i<tprob->iedges.size(); i++)
+		{
+			Tptr t1 = tprob->iedges[i]->other_tri_key;
+			if (t0 < t1)
+			{
+				for(uint j=i+1; j<tprob->iedges.size(); j++)
+				{
+					Tptr t2 = tprob->iedges[j]->other_tri_key;
+					// This triple might be considered three times,
+					// one for each triangle it contains.
+					// To prevent duplication, only proceed if this is
+					// the least triangle according to an arbitrary ordering
+					if (t0 < t2)
+					{
+						// now look for the third edge.  We're not
+						// sure if it exists...
+						Tprob prob1 = reinterpret_cast<Tprob>(t1->data);
+						for(uint ind=0; ind!=prob1->iedges.size(); ++ind)
+						{
+							if(prob1->iedges[ind]->other_tri_key == t2)
+							{
+								// ADD THE TRIPLE
+								triples.push_back(TriTripleTemp(t0, t1, t2));
+							}
+						}
+					}
+				}
+			}
+		}
+	}
     // Now, we've collected a list of Tri-Tri-Tri intersection candidates.
     // Check to see if the intersections actually exist.
-    for(TriTripleTemp t : triples) {
+    for(size_t ind=0; ind!=triples.size(); ++ind)
+	{
+		TriTripleTemp& t = triples[ind];
         if(!checkIsct(t.t0, t.t1, t.t2))    continue;
         
         // Abort if we encounter a degeneracy
-        if(Empty3d::degeneracy_count > 0)   break;
+        if(empty3d.hasDegeneracies())   break;
         
         GluePt      glue                    = newGluePt();
                     glue->edge_tri_type     = false;
@@ -1004,7 +1047,7 @@ bool Mesh<VertData,TriData>::IsctProblem::tryToFindIntersections()
         getTprob(t.t1)->addInteriorPoint(this, t.t0, t.t2, glue);
         getTprob(t.t2)->addInteriorPoint(this, t.t0, t.t1, glue);
     }
-    if(Empty3d::degeneracy_count > 0) {
+    if(empty3d.hasDegeneracies()) {
         return false;   // restart / abort
     }
     
@@ -1015,11 +1058,11 @@ template<class VertData, class TriData>
 void Mesh<VertData,TriData>::IsctProblem::perturbPositions()
 {
     const double EPSILON = 1.0e-5; // perturbation epsilon
-    for(Vec3d &coord : quantized_coords) {
-        Vec3d perturbation(Quantization::quantize(drand(-EPSILON, EPSILON)),
-                           Quantization::quantize(drand(-EPSILON, EPSILON)),
-                           Quantization::quantize(drand(-EPSILON, EPSILON)));
-        coord += perturbation;
+    for(size_t ind=0; ind!=quantized_coords.size(); ++ind) {
+        Vec3d perturbation(quantizer.quantize(drand(-EPSILON, EPSILON)),
+                           quantizer.quantize(drand(-EPSILON, EPSILON)),
+                           quantizer.quantize(drand(-EPSILON, EPSILON)));
+        quantized_coords[ind] += perturbation;
     }
 }
 
@@ -1029,10 +1072,11 @@ void Mesh<VertData,TriData>::IsctProblem::reset()
     // the data pointer in the triangles points to tproblems
     // that we're about to destroy,
     // so zero out all those pointers first!
-    tprobs.for_each([](Tprob tprob) {
+	for (Tprob tprob = tprobs.getFirst(); tprob != NULL; tprob = tprobs.getNext(tprob))
+	{
         Tptr t = tprob->the_tri;
         t->data = nullptr;
-    });
+    }
     
     glue_pts.clear();
     tprobs.clear();
@@ -1061,42 +1105,48 @@ void Mesh<VertData,TriData>::IsctProblem::findIntersections()
     }
     if(nTrys <= 0) {
         CORK_ERROR("Ran out of tries to perturb the mesh");
-        exit(1);
+		//std::logic_error
+		throw std::exception("Ran out of tries to perturb the mesh");
+        //exit(1);
     }
     
     // ok all points put together,
     // all triangle problems assembled.
     // Some intersection edges may have original vertices as endpoints
     // we consolidate the problems to check for cases like these.
-    tprobs.for_each([&](Tprob tprob) {
-        tprob->consolidate(this);
-    });
+	unsigned counter = 0;
+	for (Tprob tprob = tprobs.getFirst(); tprob != NULL; tprob = tprobs.getNext(tprob))
+	{
+		tprob->consolidate(this);
+		++counter;
+    }
 }
 
 template<class VertData, class TriData>
 bool Mesh<VertData,TriData>::IsctProblem::hasIntersections()
 {
     bool foundIsct = false;
-    Empty3d::degeneracy_count = 0;
+    empty3d.resetCounts();
     // Find some edge-triangle intersection point...
     bvh_edge_tri([&](Eptr eisct, Tptr tisct)->bool{
       if(checkIsct(eisct,tisct)) {
         foundIsct = true;
         return false; // break;
       }
-      if(Empty3d::degeneracy_count > 0) {
+      if(empty3d.hasDegeneracies()) {
         return false; // break;
       }
       return true; // continue
     });
     
-    if(Empty3d::degeneracy_count > 0 || foundIsct) {
+	bool hasIntersect = false;
+    if(empty3d.hasDegeneracies() || foundIsct) {
         std::cout << "This self-intersection might be spurious. "
                      "Degeneracies were detected." << std::endl;
-        return true;
-    } else {
-        return false;
+        hasIntersect = true;
     }
+
+	return hasIntersect;
 }
 
 
@@ -1150,7 +1200,7 @@ void Mesh<VertData,TriData>::IsctProblem::marshallArithmeticInput(
 }
 
 template<class VertData, class TriData>
-bool Mesh<VertData,TriData>::IsctProblem::checkIsct(Eptr e, Tptr t) const
+bool Mesh<VertData,TriData>::IsctProblem::checkIsct(Eptr e, Tptr t)
 {
     // simple bounding box cull; for acceleration, not correctness
     BBox3d      ebox        = buildBox(e);
@@ -1166,15 +1216,21 @@ bool Mesh<VertData,TriData>::IsctProblem::checkIsct(Eptr e, Tptr t) const
     
     Empty3d::TriEdgeIn input;
     marshallArithmeticInput(input, e, t);
-    //bool empty = Empty3d::isEmpty(input);
-    bool empty = Empty3d::emptyExact(input);
+
+//#define USE_ORIGINAL_CODE
+#ifdef USE_ORIGINAL_CODE
+    //bool empty = empty3d.isEmpty(input);
+    bool empty = empty3d.emptyExact(input);
+#else
+    bool empty = empty3d.emptyApprox(input);
+#endif
     return !empty;
 }
 
 template<class VertData, class TriData>
 bool Mesh<VertData,TriData>::IsctProblem::checkIsct(
     Tptr t0, Tptr t1, Tptr t2
-) const {
+) {
     // This function should only be called if we've already
     // identified that the intersection edges
     //      (t0,t1), (t0,t2), (t1,t2)
@@ -1196,8 +1252,8 @@ bool Mesh<VertData,TriData>::IsctProblem::checkIsct(
     
     Empty3d::TriTriTriIn input;
     marshallArithmeticInput(input, t0, t1, t2);
-    //bool empty = Empty3d::isEmpty(input);
-    bool empty = Empty3d::emptyExact(input);
+    //bool empty = empty3d.isEmpty(input);
+    bool empty = empty3d.emptyExact(input);
     return !empty;
 }
 
@@ -1206,7 +1262,11 @@ Vec3d Mesh<VertData,TriData>::IsctProblem::computeCoords(Eptr e, Tptr t) const
 {
     Empty3d::TriEdgeIn input;
     marshallArithmeticInput(input, e, t);
-    Vec3d coords = Empty3d::coordsExact(input);
+#ifdef USE_ORIGINAL_CODE
+    Vec3d coords = empty3d.coordsExact(input);
+#else
+    Vec3d coords = empty3d.coordsApprox(input);
+#endif
     return coords;
 }
 
@@ -1216,7 +1276,7 @@ Vec3d Mesh<VertData,TriData>::IsctProblem::computeCoords(
 ) const {
     Empty3d::TriTriTriIn input;
     marshallArithmeticInput(input, t0, t1, t2);
-    Vec3d coords = Empty3d::coordsExact(input);
+    Vec3d coords = empty3d.coordsExact(input);
     return coords;
 }
 
@@ -1366,15 +1426,18 @@ void Mesh<VertData,TriData>::IsctProblem::createRealPtFromGluePt(GluePt glue) {
     VertData    &data           = TopoCache::mesh->verts[v->ref];
                 data.pos        = glue->copies[0]->coord;
                 fillOutVertData(glue, data);
-    for(IVptr iv : glue->copies)
-                iv->concrete    = v;
+    for(uint ind=0; ind!=glue->copies.size(); ++ind)
+		glue->copies[ind]->concrete    = v;
 }
 
 template<class VertData, class TriData>
 void Mesh<VertData,TriData>::IsctProblem::createRealTriangles(
     Tprob tprob, EdgeCache &ecache
 ) {
-    for(GTptr gt : tprob->gtris) {
+    for(uint ind=0; ind!=tprob->gtris.size(); ++ind) {
+		
+		GTptr gt = tprob->gtris[ind];
+
         Tptr        t               = TopoCache::newTri();
                     gt->concrete    = t;
         Tri         &tri            = TopoCache::mesh->tris[t->ref];
@@ -1398,17 +1461,19 @@ template<class VertData, class TriData>
 void Mesh<VertData,TriData>::IsctProblem::resolveAllIntersections()
 {
     // solve a subdivision problem in each triangle
-    tprobs.for_each([&](Tprob tprob) {
+	for (Tprob tprob = tprobs.getFirst(); tprob != NULL; tprob = tprobs.getNext(tprob))
+	{
         tprob->subdivide(this);
-    });
+    }
     
     // now we have diced up triangles inside each triangle problem
     
     // Let's go through the glue points and create a new concrete
     // vertex object for each of these.
-    glue_pts.for_each([&](GluePt glue) {
+	for (GluePt glue = glue_pts.getFirst(); glue != NULL; glue = glue_pts.getNext(glue))
+	{
         createRealPtFromGluePt(glue);
-    });
+    }
     
     EdgeCache ecache(this);
     
@@ -1416,29 +1481,33 @@ void Mesh<VertData,TriData>::IsctProblem::resolveAllIntersections()
     // go through the diced triangle pieces and create concrete triangles
     // for each of those.
     // Along the way, let's go ahead and hook up edges as appropriate
-    tprobs.for_each([&](Tprob tprob) {
+	for (Tprob tprob = tprobs.getFirst(); tprob != NULL; tprob = tprobs.getNext(tprob))
+	{
         createRealTriangles(tprob, ecache);
-    });
+    }
     
     // mark all edges as normal by zero-ing out the data pointer
-    TopoCache::edges.for_each([](Eptr e) {
+	for (Eptr e = TopoCache::edges.getFirst(); e != NULL; e = TopoCache::edges.getNext(e))
+	{
         e->data = 0;
-    });
+    }
     // then iterate over the edges formed by intersections
     // (i.e. those edges without the boundary flag set in each triangle)
     // and mark those by setting the data pointer
-    iepool.for_each([&](IEptr ie) {
+	for (IEptr ie = iepool.getFirst(); ie != NULL; ie = iepool.getNext(ie))
+	{
         // every ie must be non-boundary
         Eptr e = ecache.maybeEdge(ie);
         ENSURE(e);
         e->data = (void*)1;
-    });
-    sepool.for_each([&](SEptr se) {
+    }
+	for (SEptr se = sepool.getFirst(); se != NULL; se = sepool.getNext(se))
+	{
         //if(se->boundary)    return; // continue
         Eptr e = ecache.maybeEdge(se);
         ENSURE(e);
         e->data = (void*)1;
-    });
+    }
     
     // This basically takes care of everything EXCEPT one detail
     // *) The base mesh data structures still need to be compacted

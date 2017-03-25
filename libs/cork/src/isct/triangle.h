@@ -1,3 +1,6 @@
+#ifndef TRIANGLE_LIB_HEADER
+#define TRIANGLE_LIB_HEADER
+
 /*****************************************************************************/
 /*                                                                           */
 /*  (triangle.h)                                                             */
@@ -279,11 +282,8 @@ struct triangulateio {
   int numberofedges;                                             /* Out only */
 };
 
-/*#ifdef ANSI_DECLARATORS*/
-void triangulate(char *, struct triangulateio *, struct triangulateio *,
+void triangulate(const char *, struct triangulateio *, struct triangulateio *, //DGM 08/24/2010 (add 'const')
                  struct triangulateio *);
 void trifree(void *memptr);
-/*#else*/ /* not ANSI_DECLARATORS */
-/*void triangulate();
-void trifree();*/
-/*#endif*/ /* not ANSI_DECLARATORS */
+
+#endif
