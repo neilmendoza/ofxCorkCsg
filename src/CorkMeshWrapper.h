@@ -41,7 +41,7 @@ namespace nm
     class CorkMeshWrapper
     {
     public:
-        CorkMeshWrapper(const ofMesh& mesh);
+        CorkMeshWrapper(const ofMesh& mesh, bool checkSolid = false);
         ~CorkMeshWrapper();
         
         CorkTriMesh corkTriMesh;

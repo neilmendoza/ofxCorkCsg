@@ -33,7 +33,7 @@
 
 namespace nm
 {
-    CorkMeshWrapper::CorkMeshWrapper(const ofMesh& mesh)
+    CorkMeshWrapper::CorkMeshWrapper(const ofMesh& mesh, bool checkSolid)
     {
         corkTriMesh.n_triangles = mesh.getNumIndices() / 3;
         corkTriMesh.n_vertices = mesh.getNumVertices();
@@ -49,6 +49,7 @@ namespace nm
         {
             corkTriMesh.triangles[i] = mesh.getIndices()[i];
         }
+        if (checkSolid) isSolid(corkTriMesh);
     }
     
     CorkMeshWrapper::~CorkMeshWrapper()

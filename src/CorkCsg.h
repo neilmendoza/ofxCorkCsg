@@ -41,6 +41,7 @@ namespace nm
         // Boolean operations follow
         // result = A U B
         void computeUnion(const ofMesh& in0, const ofMesh& in1, ofMesh& outMesh);
+        void computeUnion(const CorkMeshWrapper& in0, const CorkMeshWrapper& in1, ofMesh& outMesh);
         
         //bool isSolid(const ofMesh& mesh);
         

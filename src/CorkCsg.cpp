@@ -37,14 +37,20 @@ namespace nm
     {
         CorkMeshWrapper corkIn0(in0);
         CorkMeshWrapper corkIn1(in1);
+        computeUnion(corkIn0, corkIn1, outMesh);
+    }
+    
+    void CorkCsg::computeUnion(const CorkMeshWrapper& in0, const CorkMeshWrapper& in1, ofMesh& outMesh)
+    {
         CorkTriMesh corkOutMesh;
-        computeUnion(corkIn0.corkTriMesh, corkIn1.corkTriMesh, &corkOutMesh);
+        computeUnion(in0.corkTriMesh, in1.corkTriMesh, &corkOutMesh);
         toOf(corkOutMesh, outMesh);
         freeCorkTriMesh(&corkOutMesh);
     }
     
     void CorkCsg::toOf(const CorkTriMesh& inMesh, ofMesh& outMesh)
     {
+        outMesh.clear();
         outMesh.setMode(OF_PRIMITIVE_TRIANGLES);
         for (unsigned i = 0; i < inMesh.n_vertices; ++i)
         {
