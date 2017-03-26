@@ -33,24 +33,33 @@
 
 namespace nm
 {
-    ofMesh CorkCsg::computeUnion(const ofMesh& in0, const ofMesh& in1)
+    void CorkCsg::computeUnion(const ofMesh& in0, const ofMesh& in1, ofMesh& outMesh)
     {
         CorkMeshWrapper corkIn0(in0);
         CorkMeshWrapper corkIn1(in1);
-        CorkTriMesh* out;
-        computeUnion(corkIn0.corkTriMesh, corkIn1.corkTriMesh, out);
-        freeCorkTriMesh(out);
+        CorkTriMesh corkOutMesh;
+        computeUnion(corkIn0.corkTriMesh, corkIn1.corkTriMesh, &corkOutMesh);
+        toOf(corkOutMesh, outMesh);
+        freeCorkTriMesh(&corkOutMesh);
     }
     
-    bool CorkCsg::isSolid(const ofMesh& mesh)
+    void CorkCsg::toOf(const CorkTriMesh& inMesh, ofMesh& outMesh)
     {
-        CorkMeshWrapper corkMesh(mesh);
-        return isSolid(corkMesh.corkTriMesh);
-    }
-    
-    CorkMeshWrapper CorkCsg::toCork(const ofMesh& mesh)
-    {
-        return CorkMeshWrapper(mesh);
+        outMesh.setMode(OF_PRIMITIVE_TRIANGLES);
+        for (unsigned i = 0; i < inMesh.n_vertices; ++i)
+        {
+            glm::vec3 v;
+            v.x = inMesh.vertices[i * 3];
+            v.y = inMesh.vertices[i * 3 + 1];
+            v.z = inMesh.vertices[i * 3 + 2];
+            outMesh.addVertex(v);
+        }
+        for (unsigned i = 0; i < inMesh.n_triangles; ++i)
+        {
+            outMesh.addIndex(inMesh.triangles[i * 3]);
+            outMesh.addIndex(inMesh.triangles[i * 3 + 1]);
+            outMesh.addIndex(inMesh.triangles[i * 3 + 2]);
+        }
     }
     
     unsigned CorkCsg::getIndex(const ofMesh& mesh, const unsigned idx)
@@ -65,33 +74,31 @@ namespace nm
         else return mesh.getNumIndices();
     }
     
-    ofMesh CorkCsg::unifyVertices(const ofMesh& mesh, float epsilonSq)
+    void CorkCsg::unifyVertices(const ofMesh& inMesh, ofMesh& outMesh, float epsilonSq)
     {
-        // this is the unified mesh
-        ofMesh unified;
-        
-        if (mesh.getMode() == OF_PRIMITIVE_TRIANGLES)
+        outMesh.clear();
+        if (inMesh.getMode() == OF_PRIMITIVE_TRIANGLES)
         {
             // keep track of how many vertices have been unified so we can divide out at the end
             vector<unsigned> divisors;
             
-            for (unsigned i = 0; i < getNumVertices(mesh); ++i)
+            for (unsigned i = 0; i < getNumVertices(inMesh); ++i)
             {
-                unsigned oldIdx = getIndex(mesh, i);
-                auto& v = mesh.getVertices()[oldIdx];
+                unsigned oldIdx = getIndex(inMesh, i);
+                auto& v = inMesh.getVertices()[oldIdx];
                 unsigned idx = numeric_limits<unsigned>::max();
-                for (unsigned i = 0; i < unified.getNumVertices(); ++i)
+                for (unsigned i = 0; i < outMesh.getNumVertices(); ++i)
                 {
-                    if (glm::distance2(v, unified.getVertices()[i]) < epsilonSq)
+                    if (glm::distance2(v, outMesh.getVertices()[i]) < epsilonSq)
                     {
                         // same vertex
                         idx = i;
-                        unified.addIndex(idx);
+                        outMesh.addIndex(idx);
                         divisors[idx]++;
                         
-                        if (!mesh.getNormals().empty()) unified.getNormals()[idx] += mesh.getNormal(oldIdx);
-                        if (!mesh.getColors().empty()) unified.getColors()[idx] += mesh.getColor(oldIdx);
-                        if (!mesh.getTexCoords().empty()) unified.getTexCoords()[idx] += mesh.getTexCoord(oldIdx);
+                        if (!inMesh.getNormals().empty()) outMesh.getNormals()[idx] += inMesh.getNormal(oldIdx);
+                        if (!inMesh.getColors().empty()) outMesh.getColors()[idx] += inMesh.getColor(oldIdx);
+                        if (!inMesh.getTexCoords().empty()) outMesh.getTexCoords()[idx] += inMesh.getTexCoord(oldIdx);
                         
                         break;
                     }
@@ -100,37 +107,32 @@ namespace nm
                 if (idx == numeric_limits<unsigned>::max())
                 {
                     // didn't find vertex so add a new one
-                    idx = unified.getNumVertices();
-                    unified.addVertex(v);
-                    unified.addIndex(idx);
+                    idx = outMesh.getNumVertices();
+                    outMesh.addVertex(v);
+                    outMesh.addIndex(idx);
                     divisors.push_back(1);
                     
-                    if (!mesh.getNormals().empty()) unified.addNormal(mesh.getNormal(oldIdx));
-                    if (!mesh.getColors().empty()) unified.addColor(mesh.getColor(oldIdx));
-                    if (!mesh.getTexCoords().empty()) unified.addTexCoord(mesh.getTexCoord(oldIdx));
+                    if (!inMesh.getNormals().empty()) outMesh.addNormal(inMesh.getNormal(oldIdx));
+                    if (!inMesh.getColors().empty()) outMesh.addColor(inMesh.getColor(oldIdx));
+                    if (!inMesh.getTexCoords().empty()) outMesh.addTexCoord(inMesh.getTexCoord(oldIdx));
                 }
             }
             
             // go through and take averages of non-vertex data
-            for (unsigned i = 0; i < unified.getNumVertices(); ++i)
+            for (unsigned i = 0; i < outMesh.getNumVertices(); ++i)
             {
                 float divisor = 1.f / divisors[i];
-                if (!mesh.getNormals().empty()) unified.getNormals()[i] *= divisor;
-                if (!mesh.getColors().empty()) unified.getColors()[i] *= divisor;
-                if (!mesh.getTexCoords().empty()) unified.getTexCoords()[i] *= divisor;
+                if (!inMesh.getNormals().empty()) outMesh.getNormals()[i] *= divisor;
+                if (!inMesh.getColors().empty()) outMesh.getColors()[i] *= divisor;
+                if (!inMesh.getTexCoords().empty()) outMesh.getTexCoords()[i] *= divisor;
             }
         }
         else ofLogError() << "unifyVertices only implemented for OF_PRIMITIVE_TRIANGLES";
-        
-        return unified;
     }
     
-    ofMesh CorkCsg::fastUnifyVertices(const ofMesh& mesh)
+    void CorkCsg::fastUnifyVertices(const ofMesh& inMesh, ofMesh& outMesh)
     {
-        // this is the unified mesh
-        ofMesh unified;
-        
-        if (mesh.getMode() == OF_PRIMITIVE_TRIANGLES)
+        if (inMesh.getMode() == OF_PRIMITIVE_TRIANGLES)
         {
             auto compare = [](glm::vec3 a, glm::vec3 b)
             {
@@ -146,47 +148,45 @@ namespace nm
             // keep track of how many vertices have been unified so we can divide out at the end
             vector<unsigned> divisors;
             
-            for (unsigned i = 0; i < getNumVertices(mesh); ++i)
+            for (unsigned i = 0; i < getNumVertices(inMesh); ++i)
             {
-                unsigned oldIdx = getIndex(mesh, i);
-                auto& v = mesh.getVertices()[oldIdx];
+                unsigned oldIdx = getIndex(inMesh, i);
+                auto& v = inMesh.getVertices()[oldIdx];
                 auto it = vertexLookup.find(v);
                 unsigned idx = numeric_limits<unsigned>::max();
                 if (it == vertexLookup.end())
                 {
-                    idx = unified.getNumVertices();
-                    unified.addVertex(v);
-                    unified.addIndex(idx);
+                    idx = outMesh.getNumVertices();
+                    outMesh.addVertex(v);
+                    outMesh.addIndex(idx);
                     vertexLookup[v] = idx;
                     divisors.push_back(1);
                     
-                    if (!mesh.getNormals().empty()) unified.addNormal(mesh.getNormal(oldIdx));
-                    if (!mesh.getColors().empty()) unified.addColor(mesh.getColor(oldIdx));
-                    if (!mesh.getTexCoords().empty()) unified.addTexCoord(mesh.getTexCoord(oldIdx));
+                    if (!inMesh.getNormals().empty()) outMesh.addNormal(inMesh.getNormal(oldIdx));
+                    if (!inMesh.getColors().empty()) outMesh.addColor(inMesh.getColor(oldIdx));
+                    if (!inMesh.getTexCoords().empty()) outMesh.addTexCoord(inMesh.getTexCoord(oldIdx));
                 }
                 else
                 {
                     idx = vertexLookup[v];
-                    unified.addIndex(idx);
+                    outMesh.addIndex(idx);
                     divisors[idx]++;
                     
-                    if (!mesh.getNormals().empty()) unified.getNormals()[idx] += mesh.getNormal(oldIdx);
-                    if (!mesh.getColors().empty()) unified.getColors()[idx] += mesh.getColor(oldIdx);
-                    if (!mesh.getTexCoords().empty()) unified.getTexCoords()[idx] += mesh.getTexCoord(oldIdx);
+                    if (!inMesh.getNormals().empty()) outMesh.getNormals()[idx] += inMesh.getNormal(oldIdx);
+                    if (!inMesh.getColors().empty()) outMesh.getColors()[idx] += inMesh.getColor(oldIdx);
+                    if (!inMesh.getTexCoords().empty()) outMesh.getTexCoords()[idx] += inMesh.getTexCoord(oldIdx);
                 }
             }
             
             // go through and take averages of non-vertex data
-            for (unsigned i = 0; i < unified.getNumVertices(); ++i)
+            for (unsigned i = 0; i < outMesh.getNumVertices(); ++i)
             {
                 float divisor = 1.f / divisors[i];
-                if (!mesh.getNormals().empty()) unified.getNormals()[i] *= divisor;
-                if (!mesh.getColors().empty()) unified.getColors()[i] *= divisor;
-                if (!mesh.getTexCoords().empty()) unified.getTexCoords()[i] *= divisor;
+                if (!inMesh.getNormals().empty()) outMesh.getNormals()[i] *= divisor;
+                if (!inMesh.getColors().empty()) outMesh.getColors()[i] *= divisor;
+                if (!inMesh.getTexCoords().empty()) outMesh.getTexCoords()[i] *= divisor;
             }
         }
         else ofLogError() << "unifyVertices only implemented for OF_PRIMITIVE_TRIANGLES";
-        
-        return unified;
     }
 }

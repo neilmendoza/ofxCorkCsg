@@ -1,5 +1,5 @@
 /*
- *  CorkCsg.h
+ *  CorkMeshWrapper.cpp
  *
  *  Copyright (c) 2017, Neil Mendoza, http://www.neilmendoza.com
  *  All rights reserved. 
@@ -29,30 +29,31 @@
  *  POSSIBILITY OF SUCH DAMAGE. 
  *
  */
-#pragma once
-
-#include "ofMain.h"
 #include "CorkMeshWrapper.h"
 
 namespace nm
 {
-    namespace CorkCsg
+    CorkMeshWrapper::CorkMeshWrapper(const ofMesh& mesh)
     {
-        // Boolean operations follow
-        // result = A U B
-        void computeUnion(const ofMesh& in0, const ofMesh& in1, ofMesh& outMesh);
-        
-        //bool isSolid(const ofMesh& mesh);
-        
-        void unifyVertices(const ofMesh& inMesh, ofMesh& outMesh, float epsilonSq = 1e-8);
-        
-        void toOf(const CorkTriMesh& inMesh, ofMesh& outMesh);
-        
-        // helper functions to interate through indexed or non-indexed mesh
-        unsigned getIndex(const ofMesh& mesh, const unsigned idx);
-        unsigned getNumVertices(const ofMesh& mesh);
-        
-        // Probably don't use this, only works if there's no floating point errors in the vertices
-        void fastUnifyVertices(const ofMesh& inMesh, ofMesh& outMesh);
+        corkTriMesh.n_triangles = mesh.getNumIndices() / 3;
+        corkTriMesh.n_vertices = mesh.getNumVertices();
+        corkTriMesh.triangles = new unsigned[corkTriMesh.n_triangles * 3];
+        corkTriMesh.vertices = new float[corkTriMesh.n_vertices * 3];
+        for (unsigned i = 0; i < mesh.getNumVertices(); ++i)
+        {
+            corkTriMesh.vertices[i * 3] = mesh.getVertices()[i].x;
+            corkTriMesh.vertices[i * 3 + 1] = mesh.getVertices()[i].y;
+            corkTriMesh.vertices[i * 3 + 2] = mesh.getVertices()[i].z;
+        }
+        for (unsigned i = 0; i < mesh.getNumIndices(); ++i)
+        {
+            corkTriMesh.triangles[i] = mesh.getIndices()[i];
+        }
+    }
+    
+    CorkMeshWrapper::~CorkMeshWrapper()
+    {
+        delete[] corkTriMesh.triangles;
+        delete[] corkTriMesh.vertices;
     }
 }

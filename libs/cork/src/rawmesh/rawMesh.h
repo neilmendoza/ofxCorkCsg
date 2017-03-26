@@ -64,4 +64,4 @@ inline RawMesh<VertDataOut,TriDataOut> transduce(
 );
 
 
-#include "rawMesh.tpp"
+#include "rawMesh.inl"

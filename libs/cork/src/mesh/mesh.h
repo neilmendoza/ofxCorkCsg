@@ -44,10 +44,10 @@
 #include "mesh.decl.h"
 
 // Implementation
-#include "mesh.tpp"
-#include "mesh.remesh.tpp"
-#include "mesh.isct.tpp"
-#include "mesh.bool.tpp"
+#include "mesh.inl"
+#include "mesh.remesh.inl"
+#include "mesh.isct.inl"
+#include "mesh.bool.inl"
 
 
 

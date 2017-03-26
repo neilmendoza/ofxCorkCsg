@@ -504,7 +504,7 @@ void Mesh<VertData, TriData>::TopoCache::print()
     cout << "TRIS" << endl;
     int tri_count = 0;
     tris.for_each([&](Tptr t) {
-        cout << " " << t << ": " << *t << endl;
+        //cout << " " << t << ": " << *t << endl;
         tri_count++;
     });
     cout << "There were " << tri_count << " TRIS" << endl;

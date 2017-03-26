@@ -25,7 +25,7 @@
 // +-------------------------------------------------------------------------
 #pragma once
 
-#include "mesh.topoCache.tpp"
+#include "mesh.topoCache.inl"
 
 #include "../math/bbox.h"
 #include "../isct/quantization.h"
@@ -650,14 +650,14 @@ public:
 	// DGM: to replace lambda in IsctProblem constructor!
 	void quantizeVerts(const Quantization& quantizer)
 	{
-		if (!mesh)
+        if (!TopoCache::mesh)
 			return;
 
-		size_t N = mesh->verts.size();
+		size_t N = TopoCache::mesh->verts.size();
 		quantized_coords.resize(N);
 
 		uint write = 0;
-		for (Vptr v = verts.getFirst(); v != NULL; v = verts.getNext(v))
+		for (Vptr v = TopoCache::verts.getFirst(); v != NULL; v = TopoCache::verts.getNext(v))
 		{
 #ifdef _WIN32
 			Vec3d raw = mesh->verts[v->ref].pos;
@@ -1106,7 +1106,7 @@ void Mesh<VertData,TriData>::IsctProblem::findIntersections()
     if(nTrys <= 0) {
         CORK_ERROR("Ran out of tries to perturb the mesh");
 		//std::logic_error
-		throw std::exception("Ran out of tries to perturb the mesh");
+		throw std::runtime_error("Ran out of tries to perturb the mesh");
         //exit(1);
     }
     

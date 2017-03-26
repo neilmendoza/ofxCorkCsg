@@ -1,5 +1,5 @@
 /*
- *  CorkCsg.h
+ *  ofxCorkCsg.h
  *
  *  Copyright (c) 2017, Neil Mendoza, http://www.neilmendoza.com
  *  All rights reserved. 
@@ -31,28 +31,6 @@
  */
 #pragma once
 
-#include "ofMain.h"
-#include "CorkMeshWrapper.h"
+#include "CorkCsg.h"
 
-namespace nm
-{
-    namespace CorkCsg
-    {
-        // Boolean operations follow
-        // result = A U B
-        void computeUnion(const ofMesh& in0, const ofMesh& in1, ofMesh& outMesh);
-        
-        //bool isSolid(const ofMesh& mesh);
-        
-        void unifyVertices(const ofMesh& inMesh, ofMesh& outMesh, float epsilonSq = 1e-8);
-        
-        void toOf(const CorkTriMesh& inMesh, ofMesh& outMesh);
-        
-        // helper functions to interate through indexed or non-indexed mesh
-        unsigned getIndex(const ofMesh& mesh, const unsigned idx);
-        unsigned getNumVertices(const ofMesh& mesh);
-        
-        // Probably don't use this, only works if there's no floating point errors in the vertices
-        void fastUnifyVertices(const ofMesh& inMesh, ofMesh& outMesh);
-    }
-}
+typedef nm::CorkCsg ofxCorkCsg;
