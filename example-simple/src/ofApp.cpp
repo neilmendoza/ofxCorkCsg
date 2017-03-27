@@ -1,5 +1,5 @@
 #include "ofApp.h"
-#include "CorkCsg.h"
+#include "ofxCorkCsg.h"
 
 //--------------------------------------------------------------
 void ofApp::setup()
@@ -9,13 +9,13 @@ void ofApp::setup()
     
     //nm::CorkCsg::unifyVertices(ofMesh::cylinder(50, 50, 5, 5, 5, true, OF_PRIMITIVE_TRIANGLES), in0);
     
-    nm::CorkCsg::unifyVertices(ofMesh::box(50, 50, 50), in0);
+    ofxCorkCsg::unifyVertices(ofMesh::box(50, 50, 50), in0);
     
     ofMesh sphere = ofMesh::sphere(20, 20, OF_PRIMITIVE_TRIANGLES);
     for (auto& v : sphere.getVertices()) { v += glm::vec3(20, 20, 20); }
-    nm::CorkCsg::unifyVertices(sphere, in1);
+    ofxCorkCsg::unifyVertices(sphere, in1);
     
-    nm::CorkCsg::computeUnion(in0, in1, outMesh);
+    ofxCorkCsg::computeUnion(in0, in1, outMesh);
 }
 
 //--------------------------------------------------------------

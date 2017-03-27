@@ -1,5 +1,5 @@
 /*
- *  CorkMeshWrapper.h
+ *  CorkMeshWrapper.cpp
  *
  *  Copyright (c) 2017, Neil Mendoza, http://www.neilmendoza.com
  *  All rights reserved. 
@@ -29,21 +29,32 @@
  *  POSSIBILITY OF SUCH DAMAGE. 
  *
  */
-#pragma once
+#include "MeshWrapper.h"
 
-#include "cork.h"
-#include "ofMain.h"
-
-namespace nm
+namespace ofxCorkCsg
 {
-    // wrapper for cork mesh so it can exist when
-    // the memory of the mesh it was built from is freed
-    class CorkMeshWrapper
+    MeshWrapper::MeshWrapper(const ofMesh& mesh, bool checkSolid)
     {
-    public:
-        CorkMeshWrapper(const ofMesh& mesh, bool checkSolid = false);
-        ~CorkMeshWrapper();
-        
-        CorkTriMesh corkTriMesh;
-    };
+        corkTriMesh.n_triangles = mesh.getNumIndices() / 3;
+        corkTriMesh.n_vertices = mesh.getNumVertices();
+        corkTriMesh.triangles = new unsigned[corkTriMesh.n_triangles * 3];
+        corkTriMesh.vertices = new float[corkTriMesh.n_vertices * 3];
+        for (unsigned i = 0; i < mesh.getNumVertices(); ++i)
+        {
+            corkTriMesh.vertices[i * 3] = mesh.getVertices()[i].x;
+            corkTriMesh.vertices[i * 3 + 1] = mesh.getVertices()[i].y;
+            corkTriMesh.vertices[i * 3 + 2] = mesh.getVertices()[i].z;
+        }
+        for (unsigned i = 0; i < mesh.getNumIndices(); ++i)
+        {
+            corkTriMesh.triangles[i] = mesh.getIndices()[i];
+        }
+        if (checkSolid) isSolid(corkTriMesh);
+    }
+    
+    MeshWrapper::~MeshWrapper()
+    {
+        delete[] corkTriMesh.triangles;
+        delete[] corkTriMesh.vertices;
+    }
 }

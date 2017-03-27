@@ -802,29 +802,14 @@
 				<key>sourceTree</key>
 				<string>SOURCE_ROOT</string>
 			</dict>
-			<key>870458AB49131428D6D80450</key>
-			<dict>
-				<key>explicitFileType</key>
-				<string>sourcecode.c.h</string>
-				<key>fileEncoding</key>
-				<string>30</string>
-				<key>isa</key>
-				<string>PBXFileReference</string>
-				<key>name</key>
-				<string>CorkMeshWrapper.h</string>
-				<key>path</key>
-				<string>../../../addons/ofxCorkCsg/src/CorkMeshWrapper.h</string>
-				<key>sourceTree</key>
-				<string>SOURCE_ROOT</string>
-			</dict>
-			<key>4FD174450C92F662E4E7E7FC</key>
+			<key>492A6D694CD78C1DE5D2E38F</key>
 			<dict>
 				<key>fileRef</key>
-				<string>CEDFF1E5DE2910E1BC75C47E</string>
+				<string>57257D97559E2407BC328544</string>
 				<key>isa</key>
 				<string>PBXBuildFile</string>
 			</dict>
-			<key>CEDFF1E5DE2910E1BC75C47E</key>
+			<key>57257D97559E2407BC328544</key>
 			<dict>
 				<key>explicitFileType</key>
 				<string>sourcecode.cpp.cpp</string>
@@ -833,13 +818,13 @@
 				<key>isa</key>
 				<string>PBXFileReference</string>
 				<key>name</key>
-				<string>CorkMeshWrapper.cpp</string>
+				<string>ofxCorkCsg.cpp</string>
 				<key>path</key>
-				<string>../../../addons/ofxCorkCsg/src/CorkMeshWrapper.cpp</string>
+				<string>../../../addons/ofxCorkCsg/src/ofxCorkCsg.cpp</string>
 				<key>sourceTree</key>
 				<string>SOURCE_ROOT</string>
 			</dict>
-			<key>0ACF35BF6E050B153E915EEA</key>
+			<key>E7B66C37F983CFEF20863DDC</key>
 			<dict>
 				<key>explicitFileType</key>
 				<string>sourcecode.c.h</string>
@@ -848,9 +833,9 @@
 				<key>isa</key>
 				<string>PBXFileReference</string>
 				<key>name</key>
-				<string>CorkCsg.h</string>
+				<string>MeshWrapper.h</string>
 				<key>path</key>
-				<string>../../../addons/ofxCorkCsg/src/CorkCsg.h</string>
+				<string>../../../addons/ofxCorkCsg/src/MeshWrapper.h</string>
 				<key>sourceTree</key>
 				<string>SOURCE_ROOT</string>
 			</dict>
@@ -858,10 +843,9 @@
 			<dict>
 				<key>children</key>
 				<array>
-					<string>EA58D1C6AD92988D4A9A5D42</string>
-					<string>0ACF35BF6E050B153E915EEA</string>
-					<string>CEDFF1E5DE2910E1BC75C47E</string>
-					<string>870458AB49131428D6D80450</string>
+					<string>6D47ACF4394388E937A55DBC</string>
+					<string>E7B66C37F983CFEF20863DDC</string>
+					<string>57257D97559E2407BC328544</string>
 					<string>0A62DD5DC998F8061821A3CB</string>
 				</array>
 				<key>isa</key>
@@ -885,14 +869,14 @@
 				<key>sourceTree</key>
 				<string>&lt;group&gt;</string>
 			</dict>
-			<key>E06AC6EB84465C9EFEC3A2DF</key>
+			<key>325DB0B2CA37F83E515B8FEF</key>
 			<dict>
 				<key>fileRef</key>
-				<string>EA58D1C6AD92988D4A9A5D42</string>
+				<string>6D47ACF4394388E937A55DBC</string>
 				<key>isa</key>
 				<string>PBXBuildFile</string>
 			</dict>
-			<key>EA58D1C6AD92988D4A9A5D42</key>
+			<key>6D47ACF4394388E937A55DBC</key>
 			<dict>
 				<key>explicitFileType</key>
 				<string>sourcecode.cpp.cpp</string>
@@ -901,9 +885,9 @@
 				<key>isa</key>
 				<string>PBXFileReference</string>
 				<key>name</key>
-				<string>CorkCsg.cpp</string>
+				<string>MeshWrapper.cpp</string>
 				<key>path</key>
-				<string>../../../addons/ofxCorkCsg/src/CorkCsg.cpp</string>
+				<string>../../../addons/ofxCorkCsg/src/MeshWrapper.cpp</string>
 				<key>sourceTree</key>
 				<string>SOURCE_ROOT</string>
 			</dict>
@@ -1507,8 +1491,8 @@ fi
 				<array>
 					<string>E4B69E200A3A1BDC003C02F2</string>
 					<string>E4B69E210A3A1BDC003C02F2</string>
-					<string>E06AC6EB84465C9EFEC3A2DF</string>
-					<string>4FD174450C92F662E4E7E7FC</string>
+					<string>325DB0B2CA37F83E515B8FEF</string>
+					<string>492A6D694CD78C1DE5D2E38F</string>
 					<string>41C3EE192021D99EF70FDFCB</string>
 					<string>AB69D0B43CDDC284EE69034F</string>
 					<string>700D29D1440CEBACDE4BF01B</string>

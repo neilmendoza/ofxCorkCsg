@@ -1,5 +1,5 @@
 /*
- *  CorkCsg.cpp
+ *  ofxCorkCsg.cpp
  *
  *  Copyright (c) 2017, Neil Mendoza, http://www.neilmendoza.com
  *  All rights reserved. 
@@ -29,18 +29,18 @@
  *  POSSIBILITY OF SUCH DAMAGE. 
  *
  */
-#include "CorkCsg.h"
+#include "ofxCorkCsg.h"
 
-namespace nm
+namespace ofxCorkCsg
 {
-    void CorkCsg::computeUnion(const ofMesh& in0, const ofMesh& in1, ofMesh& outMesh)
+    void computeUnion(const ofMesh& in0, const ofMesh& in1, ofMesh& outMesh)
     {
-        CorkMeshWrapper corkIn0(in0);
-        CorkMeshWrapper corkIn1(in1);
+        MeshWrapper corkIn0(in0);
+        MeshWrapper corkIn1(in1);
         computeUnion(corkIn0, corkIn1, outMesh);
     }
     
-    void CorkCsg::computeUnion(const CorkMeshWrapper& in0, const CorkMeshWrapper& in1, ofMesh& outMesh)
+    void computeUnion(const MeshWrapper& in0, const MeshWrapper& in1, ofMesh& outMesh)
     {
         CorkTriMesh corkOutMesh;
         computeUnion(in0.corkTriMesh, in1.corkTriMesh, &corkOutMesh);
@@ -48,7 +48,7 @@ namespace nm
         freeCorkTriMesh(&corkOutMesh);
     }
     
-    void CorkCsg::toOf(const CorkTriMesh& inMesh, ofMesh& outMesh)
+    void toOf(const CorkTriMesh& inMesh, ofMesh& outMesh)
     {
         outMesh.clear();
         outMesh.setMode(OF_PRIMITIVE_TRIANGLES);
@@ -68,19 +68,19 @@ namespace nm
         }
     }
     
-    unsigned CorkCsg::getIndex(const ofMesh& mesh, const unsigned idx)
+    unsigned getIndex(const ofMesh& mesh, const unsigned idx)
     {
         if (mesh.getIndices().empty()) return idx;
         else return mesh.getIndices()[idx];
     }
     
-    unsigned CorkCsg::getNumVertices(const ofMesh& mesh)
+    unsigned getNumVertices(const ofMesh& mesh)
     {
         if (mesh.getIndices().empty()) return mesh.getNumVertices();
         else return mesh.getNumIndices();
     }
     
-    void CorkCsg::unifyVertices(const ofMesh& inMesh, ofMesh& outMesh, float epsilonSq)
+    void unifyVertices(const ofMesh& inMesh, ofMesh& outMesh, float epsilonSq)
     {
         outMesh.clear();
         if (inMesh.getMode() == OF_PRIMITIVE_TRIANGLES)
@@ -136,7 +136,7 @@ namespace nm
         else ofLogError() << "unifyVertices only implemented for OF_PRIMITIVE_TRIANGLES";
     }
     
-    void CorkCsg::fastUnifyVertices(const ofMesh& inMesh, ofMesh& outMesh)
+    void fastUnifyVertices(const ofMesh& inMesh, ofMesh& outMesh)
     {
         if (inMesh.getMode() == OF_PRIMITIVE_TRIANGLES)
         {
