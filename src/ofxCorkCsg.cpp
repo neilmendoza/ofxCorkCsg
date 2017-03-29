@@ -35,15 +35,57 @@ namespace ofxCorkCsg
 {
     void computeUnion(const ofMesh& in0, const ofMesh& in1, ofMesh& outMesh)
     {
-        MeshWrapper corkIn0(in0);
-        MeshWrapper corkIn1(in1);
-        computeUnion(corkIn0, corkIn1, outMesh);
+        computeUnion(MeshWrapper(in0), MeshWrapper(in1), outMesh);
+    }
+    
+    void computeDifference(const ofMesh& in0, const ofMesh& in1, ofMesh& outMesh)
+    {
+        computeDifference(MeshWrapper(in0), MeshWrapper(in1), outMesh);
+    }
+    
+    void computeIntersection(const ofMesh& in0, const ofMesh& in1, ofMesh& outMesh)
+    {
+        computeIntersection(MeshWrapper(in0), MeshWrapper(in1), outMesh);
+    }
+    
+    void computeSymmetricDifference(const ofMesh& in0, const ofMesh& in1, ofMesh& outMesh)
+    {
+        computeSymmetricDifference(MeshWrapper(in0), MeshWrapper(in1), outMesh);
+    }
+    
+    void resolveIntersections(const ofMesh& in0, const ofMesh& in1, ofMesh& outMesh)
+    {
+        resolveIntersections(MeshWrapper(in0), MeshWrapper(in1), outMesh);
     }
     
     void computeUnion(const MeshWrapper& in0, const MeshWrapper& in1, ofMesh& outMesh)
     {
         CorkTriMesh corkOutMesh;
         computeUnion(in0.corkTriMesh, in1.corkTriMesh, &corkOutMesh);
+        toOf(corkOutMesh, outMesh);
+        freeCorkTriMesh(&corkOutMesh);
+    }
+    
+    void computeDifference(const MeshWrapper& in0, const MeshWrapper& in1, ofMesh& outMesh)
+    {
+        CorkTriMesh corkOutMesh;
+        computeDifference(in0.corkTriMesh, in1.corkTriMesh, &corkOutMesh);
+        toOf(corkOutMesh, outMesh);
+        freeCorkTriMesh(&corkOutMesh);
+    }
+    
+    void computeIntersection(const MeshWrapper& in0, const MeshWrapper& in1, ofMesh& outMesh)
+    {
+        CorkTriMesh corkOutMesh;
+        computeIntersection(in0.corkTriMesh, in1.corkTriMesh, &corkOutMesh);
+        toOf(corkOutMesh, outMesh);
+        freeCorkTriMesh(&corkOutMesh);
+    }
+    
+    void computeSymmetricDifference(const MeshWrapper& in0, const MeshWrapper& in1, ofMesh& outMesh)
+    {
+        CorkTriMesh corkOutMesh;
+        computeSymmetricDifference(in0.corkTriMesh, in1.corkTriMesh, &corkOutMesh);
         toOf(corkOutMesh, outMesh);
         freeCorkTriMesh(&corkOutMesh);
     }
@@ -134,6 +176,142 @@ namespace ofxCorkCsg
             }
         }
         else ofLogError() << "unifyVertices only implemented for OF_PRIMITIVE_TRIANGLES";
+    }
+    
+    void cylinder(ofMesh& cylinder,
+                  float height,
+                  float radius,
+                  unsigned segments,
+                  unsigned verticalSlices,
+                  unsigned radialSlices)
+    {
+        // slice in the at y = 0;
+        ofMesh cap;
+        for (unsigned sliceIdx = 0; sliceIdx < radialSlices; ++sliceIdx)
+        {
+            float r = radius * (sliceIdx + 1) / (float)radialSlices;
+            for (unsigned segmentIdx = 0; segmentIdx < segments; ++segmentIdx)
+            {
+                float theta = TWO_PI * segmentIdx / (float)segments;
+                cap.addVertex(glm::vec3(r * sin(theta), 0.f, r * cos(theta)));
+            }
+        }
+        cap.addVertex(glm::vec3());
+        
+        // inner ring
+        for (unsigned segmentIdx = 1; segmentIdx <= segments; ++segmentIdx)
+        {
+            cap.addIndex(cap.getNumVertices() - 1);
+            cap.addIndex(segmentIdx - 1);
+            cap.addIndex(segmentIdx % segments);
+        }
+        
+        // outer rings
+        for (unsigned sliceIdx = 1; sliceIdx < radialSlices; ++sliceIdx)
+        {
+            for (unsigned segmentIdx = 1; segmentIdx <= segments; ++ segmentIdx)
+            {
+                unsigned i0 = (sliceIdx - 1) * segments + segmentIdx - 1;
+                unsigned i1 = sliceIdx * segments + segmentIdx - 1;
+                unsigned i2 = sliceIdx * segments + (segmentIdx % segments);
+                unsigned i3 = (sliceIdx - 1) * segments + (segmentIdx % segments);
+                
+                cap.addIndex(i0);
+                cap.addIndex(i1);
+                cap.addIndex(i3);
+                
+                cap.addIndex(i3);
+                cap.addIndex(i1);
+                cap.addIndex(i2);
+            }
+        }
+        
+        // body
+        ofMesh body;
+        float sectionHeight = height * (verticalSlices - 2) / (float)verticalSlices;
+        for (unsigned sliceIdx = 0; sliceIdx < verticalSlices - 1; ++sliceIdx)
+        {
+            float y = ofMap(sliceIdx, 0, verticalSlices - 2, -.5f * sectionHeight, .5f * sectionHeight);
+            for (unsigned segmentIdx = 0; segmentIdx < segments; ++segmentIdx)
+            {
+                float theta = TWO_PI * segmentIdx / (float)segments;
+                body.addVertex(glm::vec3(radius * sin(theta), y, radius * cos(theta)));
+            }
+        }
+        for (unsigned sliceIdx = 1; sliceIdx < verticalSlices - 1; ++sliceIdx)
+        {
+            for (unsigned segmentIdx = 1; segmentIdx <= segments; ++segmentIdx)
+            {
+                unsigned i0 = (sliceIdx - 1) * segments + segmentIdx - 1;
+                unsigned i1 = sliceIdx * segments + segmentIdx - 1;
+                unsigned i2 = sliceIdx * segments + (segmentIdx % segments);
+                unsigned i3 = (sliceIdx - 1) * segments + (segmentIdx % segments);
+                
+                body.addIndex(i0);
+                body.addIndex(i3);
+                body.addIndex(i1);
+                
+                body.addIndex(i3);
+                body.addIndex(i2);
+                body.addIndex(i1);
+            }
+        }
+        
+        // add bottom cap with triangle indices reversed
+        const unsigned bottomIdx = 0;
+        glm::vec3 bottomOffset(0.f, -.5f * height, 0.f);
+        for (auto& v : cap.getVertices()) { cylinder.addVertex(v + bottomOffset); }
+        for (unsigned i = 0; i < cap.getNumIndices() / 3; ++i)
+        {
+            cylinder.addIndex(cap.getIndex(3 * i));
+            cylinder.addIndex(cap.getIndex(3 * i + 2));
+            cylinder.addIndex(cap.getIndex(3 * i + 1));
+        }
+        
+        // add top cap
+        const unsigned topIdx = cylinder.getNumVertices();
+        glm::vec3 topOffset(0.f, .5f * height, 0.f);
+        for (auto& v : cap.getVertices()) { cylinder.addVertex(v + topOffset); }
+        for (auto& i : cap.getIndices()) cylinder.addIndex(i + topIdx);
+        
+        // add body
+        const unsigned bodyIdx = cylinder.getNumVertices();
+        cylinder.addVertices(body.getVertices());
+        for (auto& i : body.getIndices()) { cylinder.addIndex(i + bodyIdx); }
+        
+        // stitch together
+        const unsigned capBottomOuterIdx = segments * (radialSlices - 1);
+        const unsigned bodyBottomOuterIdx = bodyIdx;
+        const unsigned capTopOuterIdx = capBottomOuterIdx + topIdx;
+        const unsigned bodyTopOuterIdx = bodyIdx + segments * (verticalSlices - 2);
+        for (unsigned segmentIdx = 1; segmentIdx <= segments; ++segmentIdx)
+        {
+            unsigned i0 = capBottomOuterIdx + segmentIdx - 1;
+            unsigned i1 = bodyBottomOuterIdx + segmentIdx - 1;
+            unsigned i2 = bodyBottomOuterIdx + (segmentIdx % segments);
+            unsigned i3 = capBottomOuterIdx + (segmentIdx % segments);
+            
+            cylinder.addIndex(i0);
+            cylinder.addIndex(i3);
+            cylinder.addIndex(i1);
+            
+            cylinder.addIndex(i3);
+            cylinder.addIndex(i2);
+            cylinder.addIndex(i1);
+            
+            i0 = bodyTopOuterIdx + segmentIdx - 1;
+            i1 = capTopOuterIdx + segmentIdx - 1;
+            i2 = capTopOuterIdx + (segmentIdx % segments);
+            i3 = bodyTopOuterIdx + (segmentIdx % segments);
+            
+            cylinder.addIndex(i0);
+            cylinder.addIndex(i3);
+            cylinder.addIndex(i1);
+            
+            cylinder.addIndex(i3);
+            cylinder.addIndex(i2);
+            cylinder.addIndex(i1);
+        }
     }
     
     void fastUnifyVertices(const ofMesh& inMesh, ofMesh& outMesh)

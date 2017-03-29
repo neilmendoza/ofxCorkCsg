@@ -49,6 +49,7 @@ namespace ofxCorkCsg
         {
             corkTriMesh.triangles[i] = mesh.getIndices()[i];
         }
+        // isSolid function will log problems
         if (checkSolid) isSolid(corkTriMesh);
     }
     
