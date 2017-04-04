@@ -110,6 +110,11 @@ namespace ofxCorkCsg
         }
     }
     
+    void toCork(const ofMesh& inMesh, MeshWrapper& outMesh)
+    {
+        outMesh.init(inMesh);
+    }
+    
     unsigned getIndex(const ofMesh& mesh, const unsigned idx)
     {
         if (mesh.getIndices().empty()) return idx;
@@ -176,6 +181,49 @@ namespace ofxCorkCsg
             }
         }
         else ofLogError() << "unifyVertices only implemented for OF_PRIMITIVE_TRIANGLES";
+    }
+    
+    void octohedron(ofMesh& mesh, float width, float height)
+    {
+        const glm::vec3 vertices[6] = {
+            glm::vec3(0.f, height, 0.f),
+            glm::vec3(width, 0.f, 0.f),
+            glm::vec3(0.f, 0.f, width),
+            glm::vec3(-width, 0.f, 0.f),
+            glm::vec3(0.f, 0.f, -width),
+            glm::vec3(0.f, -height, 0.f)
+        };
+        
+        const unsigned indices[24] = {
+            0, 2, 1,
+            0, 3, 2,
+            0, 4, 3,
+            0, 1, 4,
+            5, 1, 2,
+            5, 2, 3,
+            5, 3, 4,
+            5, 4, 1
+        };
+        
+        for (auto& v : vertices) mesh.addVertex(v);
+        for (auto& i : indices) mesh.addIndex(i);
+    }
+    
+    void box(ofMesh& mesh, float width, float height, float depth, int resX, int resY, int resZ)
+    {
+        unifyVertices(ofMesh::box(width, height, depth, resX, resY, resZ), mesh);
+    }
+    
+    void sphere(ofMesh& mesh, float radius, unsigned resolution)
+    {
+        unifyVertices(ofMesh::sphere(radius, resolution, OF_PRIMITIVE_TRIANGLES), mesh);
+        // wind the vertices correctly
+        for (unsigned i = 0; i < mesh.getNumIndices() / 3; ++i)
+        {
+            unsigned i0 = mesh.getIndices()[i * 3];
+            mesh.getIndices()[i * 3] = mesh.getIndices()[i * 3 + 1];
+            mesh.getIndices()[i * 3 + 1] = i0;
+        }
     }
     
     void cylinder(ofMesh& cylinder,

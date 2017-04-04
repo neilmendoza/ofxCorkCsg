@@ -65,17 +65,21 @@ namespace ofxCorkCsg
     // create ofMesh from CorkTriMesh
     void toOf(const CorkTriMesh& inMesh, ofMesh& outMesh);
     
+    // create MeshWrapper from ofMesh
+    void toCork(const ofMesh& inMesh, MeshWrapper& outMesh);
+    
     // helper functions to interate through indexed or non-indexed mesh
     unsigned getIndex(const ofMesh& mesh, const unsigned idx);
     unsigned getNumVertices(const ofMesh& mesh);
     
-    // functions to create primitives with shared vertices
-    void cylinder(ofMesh& cylinder,
-                  float height,
-                  float radius,
-                  unsigned segments = 10,
-                  unsigned verticalSlices = 4,
-                  unsigned radialSlices = 2);
+    // functions to create primitives with shared vertices and counter clockwise triangle winding
+    void cylinder(ofMesh& mesh, float height, float radius, unsigned segments = 10, unsigned verticalSlices = 4, unsigned radialSlices = 2);
+    
+    void sphere(ofMesh& mesh, float radius, unsigned resolution = 12);
+    
+    void box(ofMesh& mesh, float width, float height, float depth, int resX = 2, int resY = 2, int resZ = 2);
+    
+    void octohedron(ofMesh& mesh, float width, float height); // TODO: add resolution 
     
     // Probably don't use this, only works if there's no floating point errors in the vertices
     void fastUnifyVertices(const ofMesh& inMesh, ofMesh& outMesh);

@@ -35,6 +35,13 @@ namespace ofxCorkCsg
 {
     MeshWrapper::MeshWrapper(const ofMesh& mesh, bool checkSolid)
     {
+        init(mesh);
+        // isSolid function will log problems
+        if (checkSolid) isSolid(corkTriMesh);
+    }
+    
+    void MeshWrapper::init(const ofMesh& mesh)
+    {
         corkTriMesh.n_triangles = mesh.getNumIndices() / 3;
         corkTriMesh.n_vertices = mesh.getNumVertices();
         corkTriMesh.triangles = new unsigned[corkTriMesh.n_triangles * 3];
@@ -49,8 +56,6 @@ namespace ofxCorkCsg
         {
             corkTriMesh.triangles[i] = mesh.getIndices()[i];
         }
-        // isSolid function will log problems
-        if (checkSolid) isSolid(corkTriMesh);
     }
     
     MeshWrapper::~MeshWrapper()

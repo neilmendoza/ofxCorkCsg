@@ -44,6 +44,8 @@ namespace ofxCorkCsg
         MeshWrapper(const ofMesh& mesh, bool checkSolid = false);
         ~MeshWrapper();
         
+        void init(const ofMesh& mesh);
+        
         CorkTriMesh corkTriMesh;
     };
 }
