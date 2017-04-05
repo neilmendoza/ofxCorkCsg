@@ -41,10 +41,14 @@ namespace ofxCorkCsg
     class MeshWrapper
     {
     public:
+        MeshWrapper() {};
         MeshWrapper(const ofMesh& mesh, bool checkSolid = false);
         ~MeshWrapper();
         
         void init(const ofMesh& mesh);
+        
+        glm::vec3 getVertex(unsigned idx);
+        void setVertex(unsigned idx, const glm::vec3& v);
         
         CorkTriMesh corkTriMesh;
     };

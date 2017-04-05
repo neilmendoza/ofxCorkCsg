@@ -362,6 +362,38 @@ namespace ofxCorkCsg
         }
     }
     
+    void computeNormals(ofMesh& mesh)
+    {
+        zeroNormals(mesh);
+        if (mesh.getMode() == OF_PRIMITIVE_TRIANGLES)
+        {
+            if (getNumVertices(mesh) % 3) ofLogError() << "Triangle mesh with number of vertices that is not divisible by 3";
+            for (int i = 0; i < getNumVertices(mesh) / 3; ++i)
+            {
+                glm::vec3 side1 = mesh.getVertex(getIndex(mesh, i * 3 + 1)) - mesh.getVertex(getIndex(mesh, i * 3));
+                glm::vec3 side2 = mesh.getVertex(getIndex(mesh, i * 3 + 2)) - mesh.getVertex(getIndex(mesh, i * 3 + 1));
+                glm::vec3 normal = glm::normalize(glm::cross(side1, side2));
+                for (int j = 0; j < 3; ++j)
+                {
+                    mesh.setNormal(getIndex(mesh, i * 3 + j), normal + mesh.getNormal(getIndex(mesh, i * 3 + j)));
+                }
+            }
+        }
+        else ofLogError() << "Only implemented for triangles at the moment.";
+        normalizeNormals(mesh);
+    }
+    
+    void normalizeNormals(ofMesh& mesh)
+    {
+        for (auto& n : mesh.getNormals()) glm::normalize(n);
+    }
+    
+    void zeroNormals(ofMesh& mesh)
+    {
+        mesh.getNormals().clear();
+        for (auto& v : mesh.getVertices()) mesh.addNormal(glm::vec3(0.f));
+    }
+    
     void fastUnifyVertices(const ofMesh& inMesh, ofMesh& outMesh)
     {
         if (inMesh.getMode() == OF_PRIMITIVE_TRIANGLES)

@@ -58,6 +58,18 @@ namespace ofxCorkCsg
         }
     }
     
+    glm::vec3 MeshWrapper::getVertex(unsigned idx)
+    {
+        return glm::vec3(corkTriMesh.vertices[idx * 3], corkTriMesh.vertices[idx * 3 + 1], corkTriMesh.vertices[idx * 3 + 2]);
+    }
+    
+    void MeshWrapper::setVertex(unsigned idx, const glm::vec3& v)
+    {
+        corkTriMesh.vertices[idx * 3] = v.x;
+        corkTriMesh.vertices[idx * 3 + 1] = v.y;
+        corkTriMesh.vertices[idx * 3 + 2] = v.z;
+    }
+    
     MeshWrapper::~MeshWrapper()
     {
         delete[] corkTriMesh.triangles;

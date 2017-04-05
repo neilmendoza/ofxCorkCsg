@@ -79,7 +79,13 @@ namespace ofxCorkCsg
     
     void box(ofMesh& mesh, float width, float height, float depth, int resX = 2, int resY = 2, int resZ = 2);
     
-    void octohedron(ofMesh& mesh, float width, float height); // TODO: add resolution 
+    void octohedron(ofMesh& mesh, float width, float height); // TODO: add resolution
+    
+    void computeNormals(ofMesh& mesh);
+    
+    void normalizeNormals(ofMesh& mesh);
+    
+    void zeroNormals(ofMesh& mesh);
     
     // Probably don't use this, only works if there's no floating point errors in the vertices
     void fastUnifyVertices(const ofMesh& inMesh, ofMesh& outMesh);
