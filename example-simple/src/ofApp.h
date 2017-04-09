@@ -5,6 +5,16 @@
 class ofApp : public ofBaseApp
 {
 public:
+    enum Operation
+    {
+        UNION,
+        DIFFERENCE,
+        INTERSECTION,
+        SYMETRIC_DIFFERENCE,
+        
+        NUM_OPERATIONS
+    };
+    
     void setup();
     void update();
     void draw();
@@ -22,6 +32,11 @@ public:
     void gotMessage(ofMessage msg);
 
 private:
+    void operate();
+    string toString(Operation operation) const;
+    
+    ofVboMesh boxMesh, sphereMesh, outMesh;
+    Operation operation;
     ofEasyCam cam;
-    ofVboMesh in0, in1, outMesh;
+    bool operationChanged;
 };
