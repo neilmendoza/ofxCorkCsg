@@ -42,10 +42,10 @@ namespace ofxCorkCsg
     {
     public:
         MeshWrapper() {};
-        MeshWrapper(const ofMesh& mesh, bool checkSolid = false);
+        MeshWrapper(const ofMesh& mesh, float scale = 1.f);
         ~MeshWrapper();
         
-        void init(const ofMesh& mesh);
+        void init(const ofMesh& mesh, float scale = 1.f);
         
         glm::vec3 getVertex(unsigned idx);
         void setVertex(unsigned idx, const glm::vec3& v);

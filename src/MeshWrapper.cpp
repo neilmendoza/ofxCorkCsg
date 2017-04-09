@@ -33,14 +33,14 @@
 
 namespace ofxCorkCsg
 {
-    MeshWrapper::MeshWrapper(const ofMesh& mesh, bool checkSolid)
+    MeshWrapper::MeshWrapper(const ofMesh& mesh, float scale)
     {
-        init(mesh);
+        init(mesh, scale);
         // isSolid function will log problems
-        if (checkSolid) isSolid(corkTriMesh);
+        // if (checkSolid) isSolid(corkTriMesh);
     }
     
-    void MeshWrapper::init(const ofMesh& mesh)
+    void MeshWrapper::init(const ofMesh& mesh, float scale)
     {
         corkTriMesh.n_triangles = mesh.getNumIndices() / 3;
         corkTriMesh.n_vertices = mesh.getNumVertices();
@@ -48,9 +48,9 @@ namespace ofxCorkCsg
         corkTriMesh.vertices = new float[corkTriMesh.n_vertices * 3];
         for (unsigned i = 0; i < mesh.getNumVertices(); ++i)
         {
-            corkTriMesh.vertices[i * 3] = mesh.getVertices()[i].x;
-            corkTriMesh.vertices[i * 3 + 1] = mesh.getVertices()[i].y;
-            corkTriMesh.vertices[i * 3 + 2] = mesh.getVertices()[i].z;
+            corkTriMesh.vertices[i * 3] = scale * mesh.getVertices()[i].x;
+            corkTriMesh.vertices[i * 3 + 1] = scale * mesh.getVertices()[i].y;
+            corkTriMesh.vertices[i * 3 + 2] = scale * mesh.getVertices()[i].z;
         }
         for (unsigned i = 0; i < mesh.getNumIndices(); ++i)
         {
