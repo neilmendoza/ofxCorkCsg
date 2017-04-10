@@ -47,8 +47,8 @@ ofMesh in0Mesh, in1Mesh, outMesh;
 
 // generate or load in0 and in1 here
 
-MeshWrapper in0Wrapper(in0Mesh);
-MeshWrapper in1Wrapper(in1Mesh);
+ofxCorkCsg::MeshWrapper in0Wrapper(in0Mesh);
+ofxCorkCsg::MeshWrapper in1Wrapper(in1Mesh);
 ofxCorkCsg::computeUnion(in0Wrapper, in1Wrapper, outMesh);
 ```
 
@@ -80,7 +80,7 @@ ofMesh isThisOk;
 
 // generate or load mesh here
 
-CorkMeshWrapper wrapper(isThisOk);
+ofxCorkCsg::MeshWrapper wrapper(isThisOk);
 
 isSolid(wrapper.corkTriMesh);
 ```
