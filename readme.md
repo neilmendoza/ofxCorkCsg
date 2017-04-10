@@ -16,13 +16,16 @@ The addon includes mesh generation functions that create meshes that will work "
 To use the library, generate a mesh and then execute one of the operations.
 
 ```cpp
+// input meshes
+ofMesh boxMesh, sphereMesh;
+
 // create box
 ofxCorkCsg::box(boxMesh, 150.f, 150.f, 150.f);
 
 // create sphere
 ofxCorkCsg::sphere(sphereMesh, 100.f);
 
-// out mesh
+// output mesh
 ofMesh outMesh;
 
 // result = A U B
