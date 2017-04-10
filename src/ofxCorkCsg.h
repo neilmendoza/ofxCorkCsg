@@ -59,7 +59,7 @@ namespace ofxCorkCsg
     void resolveIntersections(const ofMesh& in0, const ofMesh& in1, ofMesh& outMesh);
     void resolveIntersections(const MeshWrapper& in0, const MeshWrapper& in1, ofMesh& outMesh);
     
-    // share vertices that are close enought to each other
+    // share vertices that are close enough to each other
     void unifyVertices(const ofMesh& inMesh, ofMesh& outMesh, float epsilonSq = 1e-8);
     
     // create ofMesh from CorkTriMesh
