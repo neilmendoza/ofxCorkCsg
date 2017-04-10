@@ -6,7 +6,7 @@ Constructive solid geometry (mesh boolean) addon for openFrameworks v0.10+ based
 
 ## Usage
 
-The addon includes mesh generation functions that will work "out of the box" with the boolean operation:
+The addon includes mesh generation functions that create meshes that will work "out of the box" with the boolean operations:
 
 * **cylinder(ofMesh& mesh, float height, float radius)**
 * **void sphere(ofMesh& mesh, float radius)**
