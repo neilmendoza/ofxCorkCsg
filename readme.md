@@ -2,7 +2,7 @@
 
 # ofxCorkCsg
 
-Constructive solid geometry (mesh boolean) addon for openFrameworks v0.10+ based on [this fork](http://https://github.com/CloudCompare/cork) of the Cork library.
+Constructive solid geometry (mesh boolean) addon for openFrameworks v0.10+ based on [this fork](https://github.com/CloudCompare/cork) of the Cork library.
 
 ## Usage
 
