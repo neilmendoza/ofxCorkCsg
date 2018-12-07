@@ -92,6 +92,3 @@ isSolid(wrapper.corkTriMesh);
 The addon is compatible with openFrameworks v0.10, at the time of writing, this is the [master branch on github](https://github.com/openframeworks/openFrameworks) rather than the stable download from the website.
 
 Cork is dependent on the [GMP library](https://gmplib.org/) and at the moment only the OSX version is included here.
-
----
-Feel free to give me some Bitcoins if you like the addon - 1FxuEpubUwhPaqwmqABvwGmoMcEEMPgxjN
