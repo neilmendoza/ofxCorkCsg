@@ -90,6 +90,14 @@ namespace ofxCorkCsg
         freeCorkTriMesh(&corkOutMesh);
     }
     
+    void resolveIntersections(const MeshWrapper& in0, const MeshWrapper& in1, ofMesh& outMesh)
+    {
+        CorkTriMesh corkOutMesh;
+        resolveIntersections(in0.corkTriMesh, in1.corkTriMesh, &corkOutMesh);
+        toOf(corkOutMesh, outMesh);
+        freeCorkTriMesh(&corkOutMesh);
+    }
+
     void toOf(const CorkTriMesh& inMesh, ofMesh& outMesh)
     {
         outMesh.clear();
